@@ -88,6 +88,7 @@
     background: var(--card);
     border-radius: 28px;
     padding: 2.5rem;
+    padding-top: 0;
     box-shadow: 0 2px 0 var(--border), var(--shadow);
     border: 1.5px solid var(--border);
   }
@@ -218,20 +219,22 @@
   .section-title {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
-    margin: 2rem 0 1.4rem;
+    gap: 0.7rem;
+    margin: 2.4rem -2.5rem 1.6rem;
+    padding: 0.65rem 2.5rem;
     font-size: 0.72rem;
     font-weight: 800;
     color: var(--accent-dark);
     text-transform: uppercase;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.13em;
+    background: linear-gradient(90deg, rgba(244,131,58,0.09) 0%, rgba(244,131,58,0.03) 100%);
+    border-top: 1.5px solid var(--border);
+    border-bottom: 1.5px solid var(--border);
   }
   .section-title::after {
     content: '';
     flex: 1;
-    height: 1.5px;
-    background: var(--border);
-    border-radius: 2px;
+    height: 0;
   }
   .badge-opcional {
     display: inline-block;
@@ -345,16 +348,62 @@
   }
   .cal-popup {
     display: none; position: absolute; top: calc(100% + 4px); left: 0;
-    background: white; border: 1.5px solid var(--border); border-radius: 16px;
-    padding: 1rem; z-index: 200; box-shadow: 0 8px 32px rgba(244,131,58,0.15); width: 280px;
+    background: white; border: 1.5px solid var(--border); border-radius: 20px;
+    padding: 1.1rem; z-index: 200; box-shadow: 0 8px 32px rgba(244,131,58,0.15); width: 288px;
   }
   .cal-popup.open { display: block; }
-  .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.8rem; }
+
+  /* Cápsulas de selección */
+  .cal-chips {
+    display: flex; gap: 6px; margin-bottom: 0.9rem; flex-wrap: wrap;
+  }
+  .cal-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: rgba(244,131,58,0.13); color: var(--accent-dark);
+    font-size: 0.75rem; font-weight: 800; padding: 3px 10px;
+    border-radius: 100px; border: 1px solid rgba(244,131,58,0.28);
+    cursor: pointer; transition: background 0.15s;
+    letter-spacing: 0.02em;
+  }
+  .cal-chip:hover { background: rgba(244,131,58,0.22); }
+  .cal-chip .chip-x { font-size: 0.65rem; opacity: 0.6; margin-left: 2px; }
+
+  /* Step label */
+  .cal-step-label {
+    font-size: 0.68rem; font-weight: 800; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.55rem;
+  }
+
+  /* Year grid */
+  .cal-year-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;
+    max-height: 200px; overflow-y: auto;
+  }
+  .cal-year-item {
+    text-align: center; padding: 6px 4px; font-size: 0.88rem; font-weight: 700;
+    border-radius: 8px; cursor: pointer; color: var(--text); transition: background 0.12s;
+  }
+  .cal-year-item:hover { background: #FFF5EB; color: var(--accent-dark); }
+  .cal-year-item.selected { background: var(--accent); color: white; }
+
+  /* Month grid */
+  .cal-month-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px;
+  }
+  .cal-month-item {
+    text-align: center; padding: 8px 4px; font-size: 0.87rem; font-weight: 700;
+    border-radius: 10px; cursor: pointer; color: var(--text); transition: background 0.12s;
+  }
+  .cal-month-item:hover { background: #FFF5EB; color: var(--accent-dark); }
+  .cal-month-item.selected { background: var(--accent); color: white; }
+
+  /* Day calendar */
+  .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem; }
   .cal-nav { background: none; border: none; cursor: pointer; font-size: 18px; color: var(--accent-dark); padding: 4px 8px; border-radius: 8px; }
   .cal-nav:hover { background: #FFF5EB; }
-  .cal-title { font-weight: 700; font-size: 0.95rem; color: var(--text); }
+  .cal-title { font-weight: 700; font-size: 0.93rem; color: var(--text); }
   .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
-  .cal-day-name { text-align: center; font-size: 0.72rem; color: var(--muted); font-weight: 700; padding: 4px 0; }
+  .cal-day-name { text-align: center; font-size: 0.68rem; color: var(--muted); font-weight: 700; padding: 4px 0; }
   .cal-day {
     text-align: center; padding: 6px 2px; font-size: 0.85rem; cursor: pointer;
     border-radius: 8px; color: var(--text); font-weight: 600;
@@ -363,11 +412,6 @@
   .cal-day.empty { cursor: default; }
   .cal-day.selected { background: var(--accent); color: white; }
   .cal-day.today { font-weight: 800; color: var(--accent-dark); }
-  .cal-selects { display: flex; gap: 6px; margin-bottom: 0.7rem; }
-  .cal-selects select {
-    flex: 1; padding: 0.4rem 0.5rem; font-size: 0.82rem;
-    background-image: none; padding-right: 0.5rem;
-  }
 
   /* ===== Hero / Slogan del campa ===== */
   @keyframes heroRise {
@@ -588,11 +632,7 @@
 
     <!-- Formulario -->
     <div id="form-section">
-      <div class="step-indicator">
-        <div class="step-circle"></div>
-        <div class="step-line"></div>
-        <div class="step-circle"></div>
-      </div>
+      <div class="section-title" style="margin-top:0; border-radius: 26px 26px 0 0; border-top:none;">👤 Datos personales</div>
 
       <div class="two-col">
         <div class="field" id="field-nombre">
@@ -617,35 +657,41 @@
         <p class="error-msg" id="err-sexo">Obligatorio</p>
       </div>
 
-      <div class="two-col" style="align-items:start;">
       <div class="field" id="field-fecha">
-        <label>Fecha de nacimiento</label>
+        <label style="display:flex;align-items:center;justify-content:space-between;">
+          <span>Fecha de nacimiento</span>
+          <span id="edad-badge" style="display:none;background:rgba(244,131,58,0.13);color:var(--accent-dark);font-size:0.78rem;font-weight:800;padding:2px 10px;border-radius:100px;letter-spacing:0.03em;"></span>
+        </label>
         <div class="date-wrap">
           <input type="text" id="fecha-nac" placeholder="DD/MM/AAAA" maxlength="10"
             oninput="formatearFecha(this); updateSteps(); calcularEdad()" onfocus="abrirCal()" autocomplete="off" />
           <span class="date-icon" onclick="toggleCal()">📅</span>
           <div class="cal-popup" id="cal-popup">
-            <div class="cal-selects">
-              <select id="cal-mes" onchange="renderCal(true)"></select>
-              <select id="cal-anio" onchange="renderCal(true)"></select>
+            <!-- Cápsulas selección actual -->
+            <div class="cal-chips" id="cal-chips"></div>
+            <!-- Step label -->
+            <div class="cal-step-label" id="cal-step-label"></div>
+            <!-- Paso 1: año -->
+            <div id="cal-step-anio">
+              <div class="cal-year-grid" id="cal-year-grid"></div>
             </div>
-            <div class="cal-header">
-              <button type="button" class="cal-nav" onmousedown="event.preventDefault(); navCal(-1)">&#8249;</button>
-              <span class="cal-title" id="cal-title"></span>
-              <button type="button" class="cal-nav" onmousedown="event.preventDefault(); navCal(1)">&#8250;</button>
+            <!-- Paso 2: mes -->
+            <div id="cal-step-mes" style="display:none;">
+              <div class="cal-month-grid" id="cal-month-grid"></div>
             </div>
-            <div class="cal-grid" id="cal-grid"></div>
+            <!-- Paso 3: día -->
+            <div id="cal-step-dia" style="display:none;">
+              <div class="cal-header">
+                <button type="button" class="cal-nav" onmousedown="event.preventDefault(); navCal(-1)">&#8249;</button>
+                <span class="cal-title" id="cal-title"></span>
+                <button type="button" class="cal-nav" onmousedown="event.preventDefault(); navCal(1)">&#8250;</button>
+              </div>
+              <div class="cal-grid" id="cal-grid"></div>
+            </div>
           </div>
         </div>
         <p class="error-msg" id="err-fecha">Obligatorio</p>
       </div>
-
-      <div class="field">
-        <label>Edad</label>
-        <input type="text" id="edad" placeholder="—" readonly
-          style="background:#FFF8F2;color:var(--accent-dark);font-weight:800;cursor:default;text-align:center;font-size:1.1rem;" />
-      </div>
-      </div><!-- end two-col -->
 
       <div class="field" id="field-dni">
         <label for="dni">DNI</label>
@@ -664,7 +710,7 @@
 
       <div class="field" id="field-celular">
         <label>Celular personal</label>
-        <input type="tel" id="celular" placeholder="11 1234-5678" oninput="validarTelefono('celular'); updateSteps()" maxlength="15" />
+        <input type="tel" id="celular" placeholder="1141834573" oninput="this.value=this.value.replace(/\s/g,''); validarTelefono('celular'); updateSteps()" maxlength="15" />
         <p class="error-msg" id="err-celular-obligatorio">Obligatorio</p>
         <p class="error-msg" id="err-celular-letras">Solo se permiten números</p>
         <p class="error-msg" id="err-celular-corto">El celular debe tener al menos 6 números</p>
@@ -672,7 +718,7 @@
 
       <div class="field" id="field-telalt">
         <label>Celular de contacto de emergencia</label>
-        <input type="tel" id="tel-alt" placeholder="11 1234-5678" oninput="validarTelefono('telalt'); updateSteps()" maxlength="15" />
+        <input type="tel" id="tel-alt" placeholder="1141834573" oninput="this.value=this.value.replace(/\s/g,''); validarTelefono('telalt'); updateSteps()" maxlength="15" />
         <p class="error-msg" id="err-telalt-obligatorio">Obligatorio</p>
         <p class="error-msg" id="err-telalt-letras">Solo se permiten números</p>
         <p class="error-msg" id="err-telalt-corto">El teléfono debe tener al menos 6 números</p>
@@ -686,7 +732,24 @@
 
       <div class="field" id="field-relacion-emergencia">
         <label>Relación con el contacto de emergencia</label>
-        <input type="text" id="relacion-emergencia" placeholder="Ej: madre, hermano, amigo..." oninput="updateSteps()" />
+        <div class="search-wrap" id="wrap-relacion">
+          <input type="text" id="search-relacion" placeholder="Buscar relación..."
+            autocomplete="off"
+            oninput="filtrarRelacion()"
+            onfocus="abrirDropdownRelacion()"
+            onclick="abrirDropdownRelacion()"
+            onkeydown="keyNavRelacion(event)" />
+          <span class="search-arrow">▾</span>
+          <div class="search-dropdown" id="drop-relacion"></div>
+        </div>
+        <input type="hidden" id="relacion-emergencia" />
+        <!-- Campo libre para "Otro" -->
+        <div id="field-relacion-otro" style="display:none; margin-top:0.7rem;">
+          <label for="relacion-otro-texto">Por favor, indicá cuál *</label>
+          <input type="text" id="relacion-otro-texto" placeholder="Escribí la relación..."
+            oninput="updateSteps(); document.getElementById('relacion-emergencia').value = this.value.trim();" />
+          <p class="error-msg" id="err-relacion-otro">Obligatorio</p>
+        </div>
         <p class="error-msg" id="err-relacion-emergencia">Obligatorio</p>
       </div>
 
@@ -744,6 +807,37 @@
       </div>
 
       <div class="section-title">🏥 Cuestiones de salud</div>
+
+      <!-- Cobertura médica y número de afiliado -->
+      <div class="two-col" style="align-items:start;">
+        <div class="field" id="field-cobertura">
+          <label>Cobertura médica *</label>
+          <div class="search-wrap" id="wrap-cobertura">
+            <input type="text" id="search-cobertura" placeholder="Buscar cobertura médica..."
+              autocomplete="off"
+              oninput="filtrarCobertura()"
+              onfocus="abrirDropdownCobertura()"
+              onclick="abrirDropdownCobertura()"
+              onkeydown="keyNavCobertura(event)" />
+            <span class="search-arrow">▾</span>
+            <div class="search-dropdown" id="drop-cobertura"></div>
+          </div>
+          <input type="hidden" id="cobertura-medica" />
+          <p class="error-msg" id="err-cobertura">Obligatorio</p>
+        </div>
+        <div class="field" id="field-afiliado">
+          <label for="num-afiliado">Número de afiliado *</label>
+          <input type="text" id="num-afiliado" placeholder="Ej: 123456789" oninput="updateSteps()" />
+          <p class="error-msg" id="err-afiliado">Obligatorio</p>
+        </div>
+      </div>
+
+      <!-- Cobertura "Otro" detalle -->
+      <div class="field" id="field-cobertura-otro" style="display:none;">
+        <label for="cobertura-otro-texto">Por favor, indicá cuál *</label>
+        <input type="text" id="cobertura-otro-texto" placeholder="Escribí tu cobertura médica..." oninput="updateSteps(); document.getElementById('cobertura-medica').value = this.value.trim();" />
+        <p class="error-msg" id="err-cobertura-otro">Obligatorio</p>
+      </div>
 
       <!-- Pregunta 1: Enfermedad / condición médica / alergia -->
       <div class="field" id="field-salud-enf">
@@ -1575,53 +1669,89 @@ function formatearFecha(inp) {
   if (v.length > 2) v = v.slice(0,2) + '/' + v.slice(2);
   if (v.length > 5) v = v.slice(0,5) + '/' + v.slice(5,9);
   inp.value = v;
-  // sync calendar if valid
   const parts = inp.value.split('/');
   if (parts.length === 3 && parts[2].length === 4) {
     const d = parseInt(parts[0]), m = parseInt(parts[1])-1, y = parseInt(parts[2]);
     if (!isNaN(d) && !isNaN(m) && !isNaN(y) && y > 1900 && y < 2100) {
       calYear = y; calMonth = m;
-      renderCal();
     }
   }
 }
 
-
-
-// ---- Calendar ----
-let calYear = 2000;
-let calMonth = 4; // Mayo (0=Enero, 4=Mayo)
+// ── Calendario 3 pasos: año → mes → día ─────────────────────────────────────
+let calYear  = null;   // null = no elegido aún
+let calMonth = null;
 const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const mesesCorto = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+let calStep = 'anio'; // 'anio' | 'mes' | 'dia'
 
-function initCal() {
-  const selMes = document.getElementById('cal-mes');
-  const selAnio = document.getElementById('cal-anio');
-  meses.forEach((m, i) => {
-    const o = document.createElement('option');
-    o.value = i; o.textContent = m;
-    selMes.appendChild(o);
-  });
-  const hoy = new Date().getFullYear();
-  for (let y = hoy; y >= 1920; y--) {
-    const o = document.createElement('option');
-    o.value = y; o.textContent = y;
-    selAnio.appendChild(o);
+/* ── Cápsulas ─────────────────────────────────────────── */
+function renderChips() {
+  const wrap = document.getElementById('cal-chips');
+  wrap.innerHTML = '';
+  if (calYear !== null) {
+    const c = document.createElement('span');
+    c.className = 'cal-chip';
+    c.innerHTML = calYear + ' <span class="chip-x">✕</span>';
+    c.onclick = () => { calYear = null; calMonth = null; irStep('anio'); };
+    wrap.appendChild(c);
   }
-  selMes.value = calMonth;
-  selAnio.value = calYear;
-  renderCal();
+  if (calMonth !== null) {
+    const c = document.createElement('span');
+    c.className = 'cal-chip';
+    c.innerHTML = meses[calMonth] + ' <span class="chip-x">✕</span>';
+    c.onclick = () => { calMonth = null; irStep('mes'); };
+    wrap.appendChild(c);
+  }
 }
 
-function renderCal(fromSelect) {
-  const selMes = document.getElementById('cal-mes');
-  const selAnio = document.getElementById('cal-anio');
-  if (fromSelect) {
-    if (selMes.value !== '') calMonth = parseInt(selMes.value);
-    if (selAnio.value !== '') calYear = parseInt(selAnio.value);
-  }
-  selMes.value = calMonth;
-  selAnio.value = calYear;
+/* ── Navegación entre pasos ───────────────────────────── */
+function irStep(step) {
+  calStep = step;
+  document.getElementById('cal-step-anio').style.display = step === 'anio' ? '' : 'none';
+  document.getElementById('cal-step-mes').style.display  = step === 'mes'  ? '' : 'none';
+  document.getElementById('cal-step-dia').style.display  = step === 'dia'  ? '' : 'none';
+  const labels = { anio: 'Seleccioná el año', mes: 'Seleccioná el mes', dia: 'Seleccioná el día' };
+  document.getElementById('cal-step-label').textContent = labels[step];
+  renderChips();
+  if (step === 'anio') renderYearGrid();
+  if (step === 'mes')  renderMonthGrid();
+  if (step === 'dia')  renderDayGrid();
+}
 
+/* ── Grilla de años ───────────────────────────────────── */
+function renderYearGrid() {
+  const grid = document.getElementById('cal-year-grid');
+  grid.innerHTML = '';
+  for (let y = 2015; y >= 1920; y--) {
+    const el = document.createElement('div');
+    el.className = 'cal-year-item' + (y === calYear ? ' selected' : '');
+    el.textContent = y;
+    el.onclick = () => { calYear = y; irStep('mes'); };
+    grid.appendChild(el);
+  }
+  // Scroll al año seleccionado
+  setTimeout(() => {
+    const sel = grid.querySelector('.selected');
+    if (sel) sel.scrollIntoView({ block: 'center' });
+  }, 0);
+}
+
+/* ── Grilla de meses ──────────────────────────────────── */
+function renderMonthGrid() {
+  const grid = document.getElementById('cal-month-grid');
+  grid.innerHTML = '';
+  meses.forEach((m, i) => {
+    const el = document.createElement('div');
+    el.className = 'cal-month-item' + (i === calMonth ? ' selected' : '');
+    el.textContent = mesesCorto[i];
+    el.onclick = () => { calMonth = i; irStep('dia'); };
+    grid.appendChild(el);
+  });
+}
+
+/* ── Grilla de días ───────────────────────────────────── */
+function renderDayGrid() {
   document.getElementById('cal-title').textContent = meses[calMonth] + ' ' + calYear;
   const grid = document.getElementById('cal-grid');
   grid.innerHTML = '';
@@ -1631,10 +1761,9 @@ function renderCal(fromSelect) {
     grid.appendChild(el);
   });
   const first = new Date(calYear, calMonth, 1).getDay();
-  const days = new Date(calYear, calMonth+1, 0).getDate();
-  const hoy = new Date();
-  // get selected date from input
-  const inp = document.getElementById('fecha-nac').value;
+  const days  = new Date(calYear, calMonth + 1, 0).getDate();
+  const hoy   = new Date();
+  const inp   = document.getElementById('fecha-nac').value;
   const parts = inp.split('/');
   let selDay = -1, selMon = -1, selYr = -1;
   if (parts.length === 3 && parts[2].length === 4) {
@@ -1656,7 +1785,7 @@ function renderCal(fromSelect) {
 
 function elegirDia(d) {
   const dd = String(d).padStart(2,'0');
-  const mm = String(calMonth+1).padStart(2,'0');
+  const mm = String(calMonth + 1).padStart(2,'0');
   document.getElementById('fecha-nac').value = dd + '/' + mm + '/' + calYear;
   cerrarCal();
   calcularEdad();
@@ -1664,24 +1793,20 @@ function elegirDia(d) {
 }
 
 function abrirCal() {
-  const p = document.getElementById('cal-popup');
-  // Si hay una fecha escrita válida, navegar a ese mes/año
+  // Si ya hay fecha escrita válida, cargar esos valores
   const val = document.getElementById('fecha-nac').value;
   if (val.length === 10) {
     const parts = val.split('/');
     if (parts.length === 3) {
-      const m = parseInt(parts[1], 10) - 1;
-      const y = parseInt(parts[2], 10);
-      if (!isNaN(m) && !isNaN(y) && y > 1900) {
-        calMonth = m;
-        calYear = y;
-        document.getElementById('cal-mes').value = m;
-        document.getElementById('cal-anio').value = y;
-      }
+      const d = parseInt(parts[0],10), m = parseInt(parts[1],10)-1, y = parseInt(parts[2],10);
+      if (!isNaN(y) && y > 1900) { calYear = y; calMonth = m; }
     }
   }
-  renderCal();
-  p.classList.add('open');
+  // Decidir qué paso mostrar según lo que ya esté seleccionado
+  if (calYear === null) irStep('anio');
+  else if (calMonth === null) irStep('mes');
+  else irStep('dia');
+  document.getElementById('cal-popup').classList.add('open');
 }
 
 function toggleCal() {
@@ -1697,17 +1822,16 @@ function cerrarCal() { document.getElementById('cal-popup').classList.remove('op
 
 document.addEventListener('click', e => {
   if (!e.target.closest('.date-wrap') && !e.target.closest('.cal-popup')) cerrarCal();
-  if (!e.target.closest('.search-wrap')) cerrarTodos();
+  if (!e.target.closest('.search-wrap')) { cerrarTodos(); cerrarDropdownCobertura(); }
 });
 
 function navCal(dir) {
   calMonth += dir;
-  if (calMonth < 0) { calMonth = 11; calYear--; }
-  if (calMonth > 11) { calMonth = 0; calYear++; }
-  renderCal();
+  if (calMonth < 0)  { calMonth = 11; calYear--; }
+  if (calMonth > 11) { calMonth = 0;  calYear++; }
+  renderChips();
+  renderDayGrid();
 }
-
-initCal();
 
 function keyNav(e, campo) {
   const drop = document.getElementById('drop-' + campo);
@@ -1831,6 +1955,8 @@ function updateSteps() {
   limpiarErr('field-telalt',       'err-telalt-obligatorio', telaltOk);
   limpiarErr('field-nombre-emergencia',  'err-nombre-emergencia',  !!ne);
   limpiarErr('field-relacion-emergencia','err-relacion-emergencia', !!re);
+  limpiarErr('field-cobertura', 'err-cobertura', !!document.getElementById('cobertura-medica').value.trim());
+  limpiarErr('field-afiliado',  'err-afiliado',  !!document.getElementById('num-afiliado').value.trim());
 
   document.getElementById('btn-enviar').disabled = false;
 }
@@ -1932,6 +2058,27 @@ function enviar() {
   // Relación contacto emergencia
   const relacionEmergencia = document.getElementById('relacion-emergencia').value.trim();
   marcarObligatorio('field-relacion-emergencia', 'err-relacion-emergencia', !relacionEmergencia);
+  if (!relacionEmergencia) hayError = true;
+  // Validar campo "Otro" si está visible
+  const relacionOtroField = document.getElementById('field-relacion-otro');
+  if (relacionOtroField && relacionOtroField.style.display !== 'none') {
+    const relacionOtroVal = document.getElementById('relacion-otro-texto').value.trim();
+    marcarObligatorio('field-relacion-otro', 'err-relacion-otro', !relacionOtroVal);
+    if (!relacionOtroVal) hayError = true;
+  }
+
+  // Cobertura médica
+  const coberturaVal = document.getElementById('cobertura-medica').value.trim();
+  marcarObligatorio('field-cobertura', 'err-cobertura', !coberturaVal);
+  if (!coberturaVal) hayError = true;
+
+  // Número de afiliado (opcional si es sin cobertura)
+  const numAfiliado = document.getElementById('num-afiliado').value.trim();
+  const esSinCobertura = document.getElementById('cobertura-medica').value.trim() === 'Sin cobertura / Particular';
+  if (!esSinCobertura) {
+    marcarObligatorio('field-afiliado', 'err-afiliado', !numAfiliado);
+    if (!numAfiliado) hayError = true;
+  }
 
   // Validar campos de salud
   ['enf', 'med', 'dieta', 'otro'].forEach(key => {
@@ -2014,7 +2161,9 @@ function enviar() {
     nombreEmergencia, relacionEmergencia,
     iglesiaNombre, iglesiaCiudad, iglesiaPastor,
     saludEnf, saludEnfDet, saludMed, saludMedDet,
-    saludDieta, saludDietaDet, saludOtro, saludOtroDet };
+    saludDieta, saludDietaDet, saludOtro, saludOtroDet,
+    coberturaMediaca: document.getElementById('cobertura-medica').value.trim(),
+    numAfiliado: document.getElementById('num-afiliado').value.trim() };
 
   fetch(APPS_SCRIPT_URL, {
     method: 'POST',
@@ -2026,6 +2175,317 @@ function enviar() {
   document.getElementById('form-section').style.display = 'none';
   document.getElementById('success-section').style.display = 'block';
 }
+
+// ── Dropdown buscador de cobertura médica ──────────────────────────────────
+// ── Dropdown buscador de relación con contacto de emergencia ────────────────
+const OPCIONES_RELACION = [
+  'Madre',
+  'Padre',
+  'Abuela',
+  'Abuelo',
+  'Hermana',
+  'Hermano',
+  'Tía',
+  'Tío',
+  'Prima',
+  'Primo',
+  'Tutora / Tutor legal',
+  'Esposa',
+  'Esposo',
+  'Novia',
+  'Novio',
+  'Amiga',
+  'Amigo',
+  'Vecina',
+  'Vecino',
+  'Otro (escribir a continuación)',
+];
+
+let relacionHiIdx = -1;
+let relacionPrevVal = '';
+
+function renderDropRelacion(lista) {
+  const drop = document.getElementById('drop-relacion');
+  drop.innerHTML = '';
+  if (!lista.length) {
+    drop.innerHTML = '<div class="search-option no-results">Sin resultados</div>';
+    drop.classList.add('open');
+    return;
+  }
+  lista.forEach(op => {
+    const d = document.createElement('div');
+    d.className = 'search-option';
+    d.textContent = op;
+    d.addEventListener('mousedown', () => { seleccionarRelacion(op); });
+    drop.appendChild(d);
+  });
+  drop.classList.add('open');
+  relacionHiIdx = -1;
+}
+
+function abrirDropdownRelacion() {
+  const si = document.getElementById('search-relacion');
+  relacionPrevVal = si.value;
+  si.value = '';
+  renderDropRelacion(OPCIONES_RELACION);
+}
+
+function filtrarRelacion() {
+  const q = document.getElementById('search-relacion').value.trim().toLowerCase();
+  const lista = q ? OPCIONES_RELACION.filter(o => o.toLowerCase().includes(q)) : OPCIONES_RELACION;
+  renderDropRelacion(lista);
+  document.getElementById('relacion-emergencia').value = '';
+  updateSteps();
+}
+
+function seleccionarRelacion(op) {
+  const si = document.getElementById('search-relacion');
+  const hidden = document.getElementById('relacion-emergencia');
+  const drop = document.getElementById('drop-relacion');
+  const otroField = document.getElementById('field-relacion-otro');
+
+  if (op === 'Otro (escribir a continuación)') {
+    si.value = op;
+    hidden.value = '';
+    drop.classList.remove('open');
+    otroField.style.display = 'block';
+    document.getElementById('relacion-otro-texto').focus();
+  } else {
+    si.value = op;
+    hidden.value = op;
+    drop.classList.remove('open');
+    otroField.style.display = 'none';
+    document.getElementById('relacion-otro-texto').value = '';
+  }
+  document.getElementById('field-relacion-emergencia').classList.remove('field-error');
+  document.getElementById('err-relacion-emergencia').style.display = 'none';
+  updateSteps();
+}
+
+function cerrarDropdownRelacion() {
+  const drop = document.getElementById('drop-relacion');
+  const si = document.getElementById('search-relacion');
+  drop.classList.remove('open');
+  if (!document.getElementById('relacion-emergencia').value) {
+    si.value = relacionPrevVal;
+  }
+}
+
+function keyNavRelacion(e) {
+  const drop = document.getElementById('drop-relacion');
+  const items = drop.querySelectorAll('.search-option:not(.no-results)');
+  if (!drop.classList.contains('open') || !items.length) return;
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    relacionHiIdx = Math.min(relacionHiIdx + 1, items.length - 1);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    relacionHiIdx = Math.max(relacionHiIdx - 1, 0);
+  } else if (e.key === 'Enter' && relacionHiIdx >= 0) {
+    e.preventDefault();
+    seleccionarRelacion(items[relacionHiIdx].textContent);
+    return;
+  } else if (e.key === 'Escape') {
+    cerrarDropdownRelacion();
+    return;
+  }
+  items.forEach((it, i) => it.classList.toggle('highlighted', i === relacionHiIdx));
+  if (relacionHiIdx >= 0) items[relacionHiIdx].scrollIntoView({ block: 'nearest' });
+}
+
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('wrap-relacion');
+  if (wrap && !wrap.contains(e.target)) {
+    cerrarDropdownRelacion();
+  }
+});
+// ────────────────────────────────────────────────────────────────────────────
+
+const OPCIONES_COBERTURA = [
+  'Sin cobertura / Particular',
+  'IOMA',
+  'OSDE',
+  'Swiss Medical',
+  'Galeno',
+  'Medicus',
+  'OMINT',
+  'Accord Salud',
+  'PAMI',
+  'OSPRERA',
+  'OSECAC',
+  'OSAM',
+  'OSPE',
+  'OSPACP',
+  'OSPIA',
+  'OSPAT',
+  'OSPOCE',
+  'OSPIL',
+  'OSFATLYF',
+  'OSFATUN',
+  'OSDIPP',
+  'OSCEP',
+  'OSAPM',
+  'OSPIM',
+  'OSPECOM',
+  'OSTIA',
+  'OSPICA',
+  'OSPLAD',
+  'OSJERA',
+  'Federada Salud',
+  'Sancor Salud',
+  'Jerárquicos Salud',
+  'Luis Pasteur',
+  'Medife',
+  'Nuevas Mensajerías',
+  'Plan de Salud Sindical',
+  'Hospital Italiano',
+  'Hospital Alemán',
+  'Unión Personal',
+  'OSPEDYC',
+  'OSSEG',
+  'OSMED',
+  'OSPJN',
+  'OSECOR',
+  'OSTARH',
+  'Obra Social Bancaria',
+  'Obra Social Docente (DOSEP)',
+  'Obra Social Policial',
+  'Obra Social Municipal',
+  'Obra Social Provincial',
+  'ISSARA',
+  'ISSJP',
+  'IOSPER',
+  'POSADAS',
+  'Instituto de Previsión Social',
+  'ISSN',
+  'ISST',
+  'IPSST',
+  'IPROSS',
+  'IPSM',
+  'IPAM',
+  'IPSE',
+  'ISSFAM',
+  'IOSFA',
+  'PROFE',
+  'Otro (escribir a continuación)',
+];
+
+let coberturaHiIdx = -1;
+
+function renderDropCobertura(lista) {
+  const drop = document.getElementById('drop-cobertura');
+  drop.innerHTML = '';
+  coberturaHiIdx = -1;
+  if (!lista.length) {
+    drop.innerHTML = '<div class="search-option no-results">Sin resultados</div>';
+  } else {
+    lista.forEach(op => {
+      const d = document.createElement('div');
+      d.className = 'search-option';
+      d.textContent = op;
+      d.onmousedown = () => seleccionarCobertura(op);
+      drop.appendChild(d);
+    });
+  }
+  drop.classList.add('open');
+}
+
+function abrirDropdownCobertura() {
+  const searchInput = document.getElementById('search-cobertura');
+  const hidden = document.getElementById('cobertura-medica');
+  // Guardar el texto visible actual para restaurarlo si no se elige nada
+  searchInput._valorAnterior = searchInput.value;
+  searchInput._hiddenAnterior = hidden.value;
+  // Limpiar texto y hidden para mostrar todas las opciones (igual que provincia)
+  searchInput.value = '';
+  hidden.value = '';
+  renderDropCobertura(OPCIONES_COBERTURA);
+}
+
+function filtrarCobertura() {
+  const q = document.getElementById('search-cobertura').value.toLowerCase();
+  const lista = q ? OPCIONES_COBERTURA.filter(o => o.toLowerCase().includes(q)) : OPCIONES_COBERTURA;
+  renderDropCobertura(lista);
+  document.getElementById('cobertura-medica').value = '';
+  updateSteps();
+}
+
+function seleccionarCobertura(op) {
+  const searchInput = document.getElementById('search-cobertura');
+  const hidden      = document.getElementById('cobertura-medica');
+  const drop        = document.getElementById('drop-cobertura');
+  const otroField   = document.getElementById('field-cobertura-otro');
+  const otroInput   = document.getElementById('cobertura-otro-texto');
+
+  if (op === 'Otro (escribir a continuación)') {
+    searchInput.value = 'Otro (escribir a continuación)';
+    hidden.value = '';
+    drop.classList.remove('open');
+    otroField.style.display = 'block';
+    otroInput.value = '';
+    otroInput.focus();
+  } else {
+    searchInput.value = op;
+    hidden.value = op;
+    drop.classList.remove('open');
+    otroField.style.display = 'none';
+    otroInput.value = '';
+  }
+
+  // Afiliado: ocultar si no tiene cobertura
+  const afiliadoField = document.getElementById('field-afiliado');
+  if (op === 'Sin cobertura / Particular') {
+    afiliadoField.style.display = 'none';
+    document.getElementById('num-afiliado').value = '';
+    afiliadoField.classList.remove('field-error');
+    document.getElementById('err-afiliado').style.display = 'none';
+  } else {
+    afiliadoField.style.display = 'block';
+  }
+
+  document.getElementById('field-cobertura').classList.remove('field-error');
+  document.getElementById('err-cobertura').style.display = 'none';
+  updateSteps();
+}
+
+function cerrarDropdownCobertura() {
+  const drop = document.getElementById('drop-cobertura');
+  if (!drop.classList.contains('open')) return;
+  drop.classList.remove('open');
+  const searchInput = document.getElementById('search-cobertura');
+  const hidden = document.getElementById('cobertura-medica');
+  // Si no se eligió una nueva opción, restaurar texto y hidden anteriores
+  if (searchInput._valorAnterior !== undefined && !hidden.value) {
+    searchInput.value = searchInput._valorAnterior;
+    hidden.value = searchInput._hiddenAnterior || '';
+  }
+  searchInput._valorAnterior = undefined;
+  searchInput._hiddenAnterior = undefined;
+}
+
+function keyNavCobertura(e) {
+  const drop  = document.getElementById('drop-cobertura');
+  const items = drop.querySelectorAll('.search-option:not(.no-results)');
+  if (!drop.classList.contains('open') || !items.length) return;
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    coberturaHiIdx = Math.min(coberturaHiIdx + 1, items.length - 1);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    coberturaHiIdx = Math.max(coberturaHiIdx - 1, 0);
+  } else if (e.key === 'Enter' && coberturaHiIdx >= 0) {
+    e.preventDefault();
+    seleccionarCobertura(items[coberturaHiIdx].textContent);
+    return;
+  } else if (e.key === 'Escape') {
+    cerrarDropdownCobertura();
+    return;
+  }
+  items.forEach((it, i) => it.classList.toggle('highlighted', i === coberturaHiIdx));
+  if (coberturaHiIdx >= 0) items[coberturaHiIdx].scrollIntoView({ block: 'nearest' });
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 
 // ── Dropdown buscador de dieta ──────────────────────────────────────────────
 const OPCIONES_DIETA = [
@@ -2158,14 +2618,20 @@ document.addEventListener('click', e => {
 
 function calcularEdad() {
   const val = document.getElementById('fecha-nac').value.trim();
-  const edadInput = document.getElementById('edad');
-  if (val.length !== 10) { edadInput.value = ''; return; }
+  const badge = document.getElementById('edad-badge');
+  if (val.length !== 10) { badge.style.display = 'none'; badge.textContent = ''; return; }
   const [d, m, y] = val.split('/').map(Number);
-  if (!d || !m || !y || y < 1900) { edadInput.value = ''; return; }
+  if (!d || !m || !y || y < 1900) { badge.style.display = 'none'; badge.textContent = ''; return; }
   const hoy = new Date();
   let edad = hoy.getFullYear() - y;
   if (hoy.getMonth() + 1 < m || (hoy.getMonth() + 1 === m && hoy.getDate() < d)) edad--;
-  edadInput.value = edad >= 0 && edad < 120 ? edad + ' años' : '';
+  if (edad >= 0 && edad < 120) {
+    badge.textContent = edad + ' años';
+    badge.style.display = 'inline-block';
+  } else {
+    badge.style.display = 'none';
+    badge.textContent = '';
+  }
 }
 
 function toggleSaludDetalle(key) {
@@ -2193,6 +2659,7 @@ function toggleSaludDetalle(key) {
 
 function resetForm() {
   ['nombre','apellido','email','fecha-nac','dni','celular','tel-alt','nombre-emergencia','relacion-emergencia','calle','numero','iglesia-nombre','iglesia-ciudad','iglesia-pastor'].forEach(id => document.getElementById(id).value = '');
+  const eb = document.getElementById('edad-badge'); if(eb){ eb.style.display='none'; eb.textContent=''; }
   ['sexo'].forEach(id => document.getElementById(id).value = '');
   ['provincia','municipio','localidad'].forEach(id => document.getElementById(id).value = '');
   ['search-provincia','search-municipio','search-localidad'].forEach(id => document.getElementById(id).value = '');
@@ -2211,6 +2678,20 @@ function resetForm() {
   ['enf','med','dieta','otro'].forEach(key => { const el = document.getElementById(`field-salud-${key}-detalle`); if(el) el.style.display='none'; });
   const sd = document.getElementById('search-dieta'); if(sd){ sd.value=''; sd.placeholder='Buscar o escribir dieta/restricción...'; }
   const dd = document.getElementById('drop-dieta'); if(dd) dd.classList.remove('open');
+  // Reset relacion
+  const sr = document.getElementById('search-relacion'); if(sr){ sr.value=''; }
+  const dr = document.getElementById('drop-relacion'); if(dr) dr.classList.remove('open');
+  const hr = document.getElementById('relacion-emergencia'); if(hr) hr.value='';
+  const fro = document.getElementById('field-relacion-otro'); if(fro) fro.style.display='none';
+  const rto = document.getElementById('relacion-otro-texto'); if(rto) rto.value='';
+  // Reset cobertura
+  const sc = document.getElementById('search-cobertura'); if(sc){ sc.value=''; }
+  const dc = document.getElementById('drop-cobertura'); if(dc) dc.classList.remove('open');
+  const hc = document.getElementById('cobertura-medica'); if(hc) hc.value='';
+  const ot = document.getElementById('cobertura-otro-texto'); if(ot) ot.value='';
+  const fo = document.getElementById('field-cobertura-otro'); if(fo) fo.style.display='none';
+  const na = document.getElementById('num-afiliado'); if(na) na.value='';
+  const fa = document.getElementById('field-afiliado'); if(fa) fa.style.display='block';
   opcionesMun = []; opcionesLoc = [];
   document.getElementById('form-section').style.display = 'block';
   document.getElementById('success-section').style.display = 'none';
