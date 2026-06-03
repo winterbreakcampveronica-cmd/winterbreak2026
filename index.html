@@ -581,7 +581,7 @@
       </div>
     </div>
 
-    <p class="header-sub"><span class="sub-line1">¡El campa te espera</span><span class="sub-line2">no te lo podés perder!</span></p>
+    <p class="header-sub"><span class="sub-line1">¡El campa te espera,</span><span class="sub-line2">no te lo podés perder!</span></p>
   </div>
 
   <div class="card">
@@ -608,7 +608,7 @@
       </div>
 
       <div class="field" id="field-sexo">
-        <label>Sexo</label>
+        <label>Género</label>
         <select id="sexo" onchange="updateSteps()">
           <option value="">— Seleccioná —</option>
           <option>Femenino</option>
@@ -617,11 +617,12 @@
         <p class="error-msg" id="err-sexo">Obligatorio</p>
       </div>
 
+      <div class="two-col" style="align-items:start;">
       <div class="field" id="field-fecha">
         <label>Fecha de nacimiento</label>
         <div class="date-wrap">
           <input type="text" id="fecha-nac" placeholder="DD/MM/AAAA" maxlength="10"
-            oninput="formatearFecha(this); updateSteps()" onfocus="abrirCal()" autocomplete="off" />
+            oninput="formatearFecha(this); updateSteps(); calcularEdad()" onfocus="abrirCal()" autocomplete="off" />
           <span class="date-icon" onclick="toggleCal()">📅</span>
           <div class="cal-popup" id="cal-popup">
             <div class="cal-selects">
@@ -638,6 +639,13 @@
         </div>
         <p class="error-msg" id="err-fecha">Obligatorio</p>
       </div>
+
+      <div class="field">
+        <label>Edad</label>
+        <input type="text" id="edad" placeholder="—" readonly
+          style="background:#FFF8F2;color:var(--accent-dark);font-weight:800;cursor:default;text-align:center;font-size:1.1rem;" />
+      </div>
+      </div><!-- end two-col -->
 
       <div class="field" id="field-dni">
         <label for="dni">DNI</label>
@@ -683,6 +691,19 @@
       </div>
 
       <div class="section-title">📍 Ubicación</div>
+
+      <div class="two-col">
+        <div class="field" id="field-calle">
+          <label for="calle">Calle</label>
+          <input type="text" id="calle" placeholder="Ej: Av. San Martín" oninput="updateSteps()" />
+          <p class="error-msg" id="err-calle">Obligatorio</p>
+        </div>
+        <div class="field" id="field-numero">
+          <label for="numero">Número</label>
+          <input type="text" id="numero" placeholder="Ej: 1234" maxlength="6" oninput="updateSteps()" />
+          <p class="error-msg" id="err-numero">Obligatorio</p>
+        </div>
+      </div>
 
       <div class="field" id="field-provincia">
         <label>Provincia</label>
@@ -738,7 +759,7 @@
         <p class="error-msg" id="err-salud-enf">Obligatorio</p>
       </div>
       <div class="field" id="field-salud-enf-detalle" style="display:none;">
-        <label for="salud-enf-detalle">En caso de haber respondido Sí, indicá cuál *</label>
+        <label for="salud-enf-detalle">Por favor, indicá cuál *</label>
         <input type="text" id="salud-enf-detalle" placeholder="Describí tu condición médica o alergia" oninput="updateSteps()" />
         <p class="error-msg" id="err-salud-enf-detalle">Obligatorio</p>
       </div>
@@ -757,7 +778,7 @@
         <p class="error-msg" id="err-salud-med">Obligatorio</p>
       </div>
       <div class="field" id="field-salud-med-detalle" style="display:none;">
-        <label for="salud-med-detalle">En caso de haber respondido Sí, indicá cuál *</label>
+        <label for="salud-med-detalle">Por favor, indicá cuál *</label>
         <input type="text" id="salud-med-detalle" placeholder="Indicá el medicamento y la dosis" oninput="updateSteps()" />
         <p class="error-msg" id="err-salud-med-detalle">Obligatorio</p>
       </div>
@@ -776,7 +797,7 @@
         <p class="error-msg" id="err-salud-dieta">Obligatorio</p>
       </div>
       <div class="field" id="field-salud-dieta-detalle" style="display:none;">
-        <label>En caso de haber respondido Sí, indicá cuál *</label>
+        <label>Por favor, indicá cuál *</label>
         <div class="search-wrap" id="wrap-dieta">
           <input type="text" id="search-dieta" placeholder="Buscar o escribir dieta/restricción..."
             autocomplete="off"
@@ -804,7 +825,7 @@
         <p class="error-msg" id="err-salud-otro">Obligatorio</p>
       </div>
       <div class="field" id="field-salud-otro-detalle" style="display:none;">
-        <label for="salud-otro-detalle">En caso de haber respondido Sí, indicá cuál *</label>
+        <label for="salud-otro-detalle">Por favor, indicá cuál *</label>
         <input type="text" id="salud-otro-detalle" placeholder="Cualquier información adicional de salud" oninput="updateSteps()" />
         <p class="error-msg" id="err-salud-otro-detalle">Obligatorio</p>
       </div>
@@ -839,7 +860,7 @@
       <div class="success-data">
         <div><span>Nombre</span><strong id="res-nombre"></strong></div>
         <div><span>Apellido</span><strong id="res-apellido"></strong></div>
-        <div><span>Sexo</span><strong id="res-sexo"></strong></div>
+        <div><span>Género</span><strong id="res-sexo"></strong></div>
         <div><span>Correo</span><strong id="res-email"></strong></div>
         <div><span>Fecha de nacimiento</span><strong id="res-fecha"></strong></div>
         <div><span>Celular personal</span><strong id="res-celular"></strong></div>
@@ -1638,6 +1659,7 @@ function elegirDia(d) {
   const mm = String(calMonth+1).padStart(2,'0');
   document.getElementById('fecha-nac').value = dd + '/' + mm + '/' + calYear;
   cerrarCal();
+  calcularEdad();
   updateSteps();
 }
 
@@ -1847,6 +1869,8 @@ function enviar() {
   marcarObligatorio('field-provincia',   'err-provincia',   !document.getElementById('provincia').value);
   marcarObligatorio('field-municipio',   'err-municipio',   !document.getElementById('municipio').value);
   marcarObligatorio('field-localidad',   'err-localidad',   !document.getElementById('localidad').value);
+  marcarObligatorio('field-calle',       'err-calle',       !document.getElementById('calle').value.trim());
+  marcarObligatorio('field-numero',      'err-numero',      !document.getElementById('numero').value.trim());
 
   // Email
   const emailVal = document.getElementById('email').value.trim();
@@ -1984,7 +2008,10 @@ function enviar() {
     dni: document.getElementById('dni').value.trim(),
     celular: celular,
     telalt: telalt,
-    provincia: prov, municipio: mun, localidad: loc, nombreEmergencia, relacionEmergencia,
+    provincia: prov, municipio: mun, localidad: loc,
+    calle: document.getElementById('calle').value.trim(),
+    numero: document.getElementById('numero').value.trim(),
+    nombreEmergencia, relacionEmergencia,
     iglesiaNombre, iglesiaCiudad, iglesiaPastor,
     saludEnf, saludEnfDet, saludMed, saludMedDet,
     saludDieta, saludDietaDet, saludOtro, saludOtroDet };
@@ -2129,6 +2156,18 @@ document.addEventListener('click', e => {
 });
 // ────────────────────────────────────────────────────────────────────────────
 
+function calcularEdad() {
+  const val = document.getElementById('fecha-nac').value.trim();
+  const edadInput = document.getElementById('edad');
+  if (val.length !== 10) { edadInput.value = ''; return; }
+  const [d, m, y] = val.split('/').map(Number);
+  if (!d || !m || !y || y < 1900) { edadInput.value = ''; return; }
+  const hoy = new Date();
+  let edad = hoy.getFullYear() - y;
+  if (hoy.getMonth() + 1 < m || (hoy.getMonth() + 1 === m && hoy.getDate() < d)) edad--;
+  edadInput.value = edad >= 0 && edad < 120 ? edad + ' años' : '';
+}
+
 function toggleSaludDetalle(key) {
   const val = document.querySelector(`input[name="salud-${key}"]:checked`)?.value;
   const detalleField = document.getElementById(`field-salud-${key}-detalle`);
@@ -2153,7 +2192,7 @@ function toggleSaludDetalle(key) {
 }
 
 function resetForm() {
-  ['nombre','apellido','email','fecha-nac','dni','celular','tel-alt','nombre-emergencia','relacion-emergencia','iglesia-nombre','iglesia-ciudad','iglesia-pastor'].forEach(id => document.getElementById(id).value = '');
+  ['nombre','apellido','email','fecha-nac','dni','celular','tel-alt','nombre-emergencia','relacion-emergencia','calle','numero','iglesia-nombre','iglesia-ciudad','iglesia-pastor'].forEach(id => document.getElementById(id).value = '');
   ['sexo'].forEach(id => document.getElementById(id).value = '');
   ['provincia','municipio','localidad'].forEach(id => document.getElementById(id).value = '');
   ['search-provincia','search-municipio','search-localidad'].forEach(id => document.getElementById(id).value = '');
