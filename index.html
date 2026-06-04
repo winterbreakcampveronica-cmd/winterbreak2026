@@ -120,6 +120,7 @@
     padding-top: 0;
     box-shadow: 0 2px 0 var(--border), 0 16px 60px rgba(244,131,58,0.14), 0 2px 8px rgba(180,90,20,0.06);
     border: 1.5px solid var(--border);
+    overflow: visible;
   }
 
   .field {
@@ -182,17 +183,35 @@
     position: absolute; right: 0.9rem; top: 50%; transform: translateY(-50%);
     pointer-events: none; color: var(--muted); font-size: 12px;
   }
-  .search-dropdown {
-    display: none;
-    position: absolute; top: calc(100% + 4px); left: 0; right: 0;
-    background: #fff;
-    border: 1.5px solid var(--border);
-    border-radius: 14px;
-    max-height: 200px; overflow-y: auto;
-    z-index: 100;
-    box-shadow: 0 8px 32px rgba(244,131,58,0.12);
-  }
+  /* El dropdown real vive en el body como portal */
+  .search-dropdown { display: none; }
   .search-dropdown.open { display: block; }
+
+  /* Portal dropdown pegado al body */
+  #portal-dropdown {
+    display: none;
+    position: fixed;
+    background: #ffffff;
+    border: 1.5px solid #F5D9BC;
+    border-radius: 14px;
+    max-height: 45vh;
+    overflow-y: auto;
+    z-index: 999999;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.22);
+    -webkit-overflow-scrolling: touch;
+  }
+  #portal-dropdown.open { display: block; }
+  #portal-dropdown .search-option {
+    padding: 0.85rem 1rem;
+    cursor: pointer;
+    font-size: 1rem;
+    color: #3D2010;
+    font-weight: 600;
+    border-bottom: 0.5px solid #F5D9BC;
+    font-family: 'Nunito', sans-serif;
+  }
+  #portal-dropdown .search-option:last-child { border-bottom: none; }
+  #portal-dropdown .search-option:hover { background: #FFF5EB; color: #D96820; }
   .search-option {
     padding: 0.7rem 1rem;
     cursor: pointer;
@@ -376,9 +395,9 @@
     font-size: 16px; cursor: pointer; user-select: none;
   }
   .cal-popup {
-    display: none; position: absolute; top: calc(100% + 4px); left: 0;
+    display: none; position: fixed; top: 0; left: 0;
     background: white; border: 1.5px solid var(--border); border-radius: 20px;
-    padding: 1.1rem; z-index: 200; box-shadow: 0 8px 32px rgba(244,131,58,0.15); width: 288px;
+    padding: 1.1rem; z-index: 999999; box-shadow: 0 8px 40px rgba(0,0,0,0.22); width: 288px;
   }
   .cal-popup.open { display: block; }
 
@@ -1644,22 +1663,119 @@ function renderDrop(campo, opciones) {
 }
 
 function filtrarOpciones(campo) {
-  const opciones = campo === 'provincia' ? opcionesProv : campo === 'municipio' ? opcionesMun : opcionesLoc;
-  renderDrop(campo, opciones);
-  document.getElementById('drop-' + campo).classList.add('open');
   document.getElementById(campo).value = '';
+  if (!_portal.anchor || _portal.anchor.id !== 'search-' + campo) {
+    abrirPortal(document.getElementById('search-' + campo), () => _opcionesFiltradas(campo), (val) => seleccionar(campo, val));
+  } else {
+    refrescarPortal();
+  }
   updateSteps();
 }
 
+// ── Portal dropdown system ───────────────────────────────────────────────────
+// El dropdown vive directo en el <body> para que ningun contenedor con
+// transform/filter/backdrop-filter lo "atrape". Funciona igual en compu y celular.
+let _portal = {
+  anchor: null,      // input que abrio el dropdown
+  render: null,      // funcion que devuelve el array de items a mostrar (segun texto actual)
+  onSelect: null     // que hacer al elegir
+};
+
+function _portalEl() { return document.getElementById('portal-dropdown'); }
+
+function cerrarTodosLosDropdowns() {
+  const portal = _portalEl();
+  if (portal) { portal.classList.remove('open'); portal.innerHTML = ''; }
+  _portal = { anchor: null, render: null, onSelect: null };
+  const cal = document.getElementById('cal-popup');
+  if (cal) cal.classList.remove('open');
+}
+
+function _posicionarPortal() {
+  const portal = _portalEl();
+  if (!portal || !_portal.anchor) return;
+  const rect = _portal.anchor.getBoundingClientRect();
+  portal.style.left = rect.left + 'px';
+  portal.style.width = rect.width + 'px';
+  const spaceBelow = window.innerHeight - rect.bottom;
+  const h = portal.offsetHeight || 200;
+  if (spaceBelow > h + 12 || spaceBelow > window.innerHeight * 0.4) {
+    portal.style.top = (rect.bottom + 4) + 'px';
+    portal.style.bottom = 'auto';
+  } else {
+    portal.style.top = 'auto';
+    portal.style.bottom = (window.innerHeight - rect.top + 4) + 'px';
+  }
+}
+
+function _pintarPortal() {
+  const portal = _portalEl();
+  if (!portal || !_portal.render) return;
+  const items = _portal.render();
+  portal.innerHTML = '';
+  if (!items || items.length === 0) {
+    const d = document.createElement('div');
+    d.className = 'search-option no-results';
+    d.textContent = 'Sin resultados';
+    portal.appendChild(d);
+  } else {
+    items.forEach(it => {
+      const div = document.createElement('div');
+      div.className = 'search-option';
+      if (typeof it === 'object') {
+        div.innerHTML = it.html;
+        div._valor = it.valor;
+      } else {
+        div.textContent = it;
+        div._valor = it;
+      }
+      const elegir = (e) => { e.preventDefault(); e.stopPropagation(); const v = div._valor; _portal.onSelect(v); cerrarTodosLosDropdowns(); };
+      div.addEventListener('mousedown', elegir);
+      div.addEventListener('touchend', elegir);
+      portal.appendChild(div);
+    });
+  }
+  _portalHiIdx = -1;
+  portal.classList.add('open');
+  _posicionarPortal();
+}
+
+function abrirPortal(anchorEl, renderFn, onSelect) {
+  cerrarTodosLosDropdowns();
+  _portal.anchor = anchorEl;
+  _portal.render = renderFn;
+  _portal.onSelect = onSelect;
+  _pintarPortal();
+}
+
+// Mientras el usuario escribe, repintamos las opciones filtradas
+function refrescarPortal() {
+  if (_portal.anchor) _pintarPortal();
+}
+
+document.addEventListener('mousedown', e => {
+  const portal = _portalEl();
+  if (portal && portal.classList.contains('open') &&
+      !portal.contains(e.target) && e.target !== _portal.anchor) {
+    cerrarTodosLosDropdowns();
+  }
+});
+
+window.addEventListener('scroll', () => { if (_portal.anchor) _posicionarPortal(); }, { passive: true });
+window.addEventListener('resize', () => { if (_portal.anchor) _posicionarPortal(); }, { passive: true });
+// ─────────────────────────────────────────────────────────────────────────────
+
 function abrirDropdown(campo) {
-  // Guardar el valor actual para restaurarlo si no se elige nada
   const searchInput = document.getElementById('search-' + campo);
   searchInput._valorAnterior = document.getElementById(campo).value;
-  // Limpiar el texto para mostrar todas las opciones
   searchInput.value = '';
-  const opciones = campo === 'provincia' ? opcionesProv : campo === 'municipio' ? opcionesMun : opcionesLoc;
-  renderDrop(campo, opciones);
-  document.getElementById('drop-' + campo).classList.add('open');
+  abrirPortal(searchInput, () => _opcionesFiltradas(campo), (val) => seleccionar(campo, val));
+}
+
+function _opcionesFiltradas(campo) {
+  const base = campo === 'provincia' ? opcionesProv : campo === 'municipio' ? opcionesMun : opcionesLoc;
+  const q = document.getElementById('search-' + campo).value.trim().toLowerCase();
+  return q ? base.filter(o => o.toLowerCase().includes(q)) : base;
 }
 
 function cerrarTodos() {
@@ -1776,6 +1892,7 @@ function irStep(step) {
   if (step === 'anio') renderYearGrid();
   if (step === 'mes')  renderMonthGrid();
   if (step === 'dia')  renderDayGrid();
+  if (typeof posicionarCal === 'function') posicionarCal();
 }
 
 /* ── Grilla de años ───────────────────────────────────── */
@@ -1852,6 +1969,10 @@ function elegirDia(d) {
 }
 
 function abrirCal() {
+  cerrarTodosLosDropdowns();
+  // Mover el cal-popup al body para que no quede atrapado por contenedores con filtros
+  const popup = document.getElementById('cal-popup');
+  if (popup.parentElement !== document.body) document.body.appendChild(popup);
   // Si ya hay fecha escrita válida, cargar esos valores
   const val = document.getElementById('fecha-nac').value;
   if (val.length === 10) {
@@ -1865,7 +1986,27 @@ function abrirCal() {
   if (calYear === null) irStep('anio');
   else if (calMonth === null) irStep('mes');
   else irStep('dia');
-  document.getElementById('cal-popup').classList.add('open');
+  popup.classList.add('open');
+  posicionarCal();
+}
+
+function posicionarCal() {
+  const popup = document.getElementById('cal-popup');
+  const anchor = document.getElementById('fecha-nac');
+  if (!popup.classList.contains('open')) return;
+  const rect = anchor.getBoundingClientRect();
+  const w = popup.offsetWidth || 288;
+  let left = rect.left;
+  if (left + w > window.innerWidth - 8) left = window.innerWidth - w - 8;
+  if (left < 8) left = 8;
+  popup.style.left = left + 'px';
+  const h = popup.offsetHeight || 320;
+  const spaceBelow = window.innerHeight - rect.bottom;
+  if (spaceBelow > h + 12 || spaceBelow > window.innerHeight * 0.45) {
+    popup.style.top = (rect.bottom + 4) + 'px';
+  } else {
+    popup.style.top = Math.max(8, rect.top - h - 4) + 'px';
+  }
 }
 
 function toggleCal() {
@@ -1881,8 +2022,10 @@ function cerrarCal() { document.getElementById('cal-popup').classList.remove('op
 
 document.addEventListener('click', e => {
   if (!e.target.closest('.date-wrap') && !e.target.closest('.cal-popup')) cerrarCal();
-  if (!e.target.closest('.search-wrap')) { cerrarTodos(); cerrarDropdownCobertura(); }
 });
+
+window.addEventListener('scroll', () => { if (document.getElementById('cal-popup').classList.contains('open')) posicionarCal(); }, { passive: true });
+window.addEventListener('resize', () => { if (document.getElementById('cal-popup').classList.contains('open')) posicionarCal(); }, { passive: true });
 
 function navCal(dir) {
   calMonth += dir;
@@ -1892,26 +2035,30 @@ function navCal(dir) {
   renderDayGrid();
 }
 
-function keyNav(e, campo) {
-  const drop = document.getElementById('drop-' + campo);
-  const items = drop.querySelectorAll('.search-option:not(.no-results)');
+let _portalHiIdx = -1;
+function _portalKeyNav(e) {
+  const portal = _portalEl();
+  if (!portal || !portal.classList.contains('open')) return;
+  const items = portal.querySelectorAll('.search-option:not(.no-results)');
   if (!items.length) return;
   if (e.key === 'ArrowDown') {
     e.preventDefault();
-    hiIdx[campo] = Math.min(hiIdx[campo] + 1, items.length - 1);
+    _portalHiIdx = Math.min(_portalHiIdx + 1, items.length - 1);
   } else if (e.key === 'ArrowUp') {
     e.preventDefault();
-    hiIdx[campo] = Math.max(hiIdx[campo] - 1, 0);
+    _portalHiIdx = Math.max(_portalHiIdx - 1, 0);
   } else if (e.key === 'Enter') {
     e.preventDefault();
-    if (hiIdx[campo] >= 0) items[hiIdx[campo]].dispatchEvent(new MouseEvent('mousedown'));
+    if (_portalHiIdx >= 0 && items[_portalHiIdx]) items[_portalHiIdx].dispatchEvent(new MouseEvent('mousedown'));
     return;
   } else if (e.key === 'Escape') {
-    cerrarTodos(); return;
+    cerrarTodosLosDropdowns(); return;
   }
-  items.forEach((it, i) => it.classList.toggle('highlighted', i === hiIdx[campo]));
-  if (hiIdx[campo] >= 0) items[hiIdx[campo]].scrollIntoView({ block: 'nearest' });
+  items.forEach((it, i) => it.classList.toggle('highlighted', i === _portalHiIdx));
+  if (_portalHiIdx >= 0 && items[_portalHiIdx]) items[_portalHiIdx].scrollIntoView({ block: 'nearest' });
 }
+
+function keyNav(e, campo) { _portalKeyNav(e); }
 
 function seleccionar(campo, valor) {
   document.getElementById('search-' + campo).value = valor;
@@ -2282,18 +2429,25 @@ function renderDropRelacion(lista) {
   relacionHiIdx = -1;
 }
 
+function _relacionFiltradas() {
+  const q = document.getElementById('search-relacion').value.trim().toLowerCase();
+  return q ? OPCIONES_RELACION.filter(o => o.toLowerCase().includes(q)) : OPCIONES_RELACION;
+}
+
 function abrirDropdownRelacion() {
   const si = document.getElementById('search-relacion');
   relacionPrevVal = si.value;
   si.value = '';
-  renderDropRelacion(OPCIONES_RELACION);
+  abrirPortal(si, _relacionFiltradas, (op) => seleccionarRelacion(op));
 }
 
 function filtrarRelacion() {
-  const q = document.getElementById('search-relacion').value.trim().toLowerCase();
-  const lista = q ? OPCIONES_RELACION.filter(o => o.toLowerCase().includes(q)) : OPCIONES_RELACION;
-  renderDropRelacion(lista);
   document.getElementById('relacion-emergencia').value = '';
+  if (!_portal.anchor || _portal.anchor.id !== 'search-relacion') {
+    abrirPortal(document.getElementById('search-relacion'), _relacionFiltradas, (op) => seleccionarRelacion(op));
+  } else {
+    refrescarPortal();
+  }
   updateSteps();
 }
 
@@ -2330,27 +2484,7 @@ function cerrarDropdownRelacion() {
   }
 }
 
-function keyNavRelacion(e) {
-  const drop = document.getElementById('drop-relacion');
-  const items = drop.querySelectorAll('.search-option:not(.no-results)');
-  if (!drop.classList.contains('open') || !items.length) return;
-  if (e.key === 'ArrowDown') {
-    e.preventDefault();
-    relacionHiIdx = Math.min(relacionHiIdx + 1, items.length - 1);
-  } else if (e.key === 'ArrowUp') {
-    e.preventDefault();
-    relacionHiIdx = Math.max(relacionHiIdx - 1, 0);
-  } else if (e.key === 'Enter' && relacionHiIdx >= 0) {
-    e.preventDefault();
-    seleccionarRelacion(items[relacionHiIdx].textContent);
-    return;
-  } else if (e.key === 'Escape') {
-    cerrarDropdownRelacion();
-    return;
-  }
-  items.forEach((it, i) => it.classList.toggle('highlighted', i === relacionHiIdx));
-  if (relacionHiIdx >= 0) items[relacionHiIdx].scrollIntoView({ block: 'nearest' });
-}
+function keyNavRelacion(e) { _portalKeyNav(e); }
 
 document.addEventListener('click', e => {
   const wrap = document.getElementById('wrap-relacion');
@@ -2449,23 +2583,28 @@ function renderDropCobertura(lista) {
   drop.classList.add('open');
 }
 
+function _coberturaFiltradas() {
+  const q = document.getElementById('search-cobertura').value.trim().toLowerCase();
+  return q ? OPCIONES_COBERTURA.filter(o => o.toLowerCase().includes(q)) : OPCIONES_COBERTURA;
+}
+
 function abrirDropdownCobertura() {
   const searchInput = document.getElementById('search-cobertura');
   const hidden = document.getElementById('cobertura-medica');
-  // Guardar el texto visible actual para restaurarlo si no se elige nada
   searchInput._valorAnterior = searchInput.value;
   searchInput._hiddenAnterior = hidden.value;
-  // Limpiar texto y hidden para mostrar todas las opciones (igual que provincia)
   searchInput.value = '';
   hidden.value = '';
-  renderDropCobertura(OPCIONES_COBERTURA);
+  abrirPortal(searchInput, _coberturaFiltradas, (op) => seleccionarCobertura(op));
 }
 
 function filtrarCobertura() {
-  const q = document.getElementById('search-cobertura').value.toLowerCase();
-  const lista = q ? OPCIONES_COBERTURA.filter(o => o.toLowerCase().includes(q)) : OPCIONES_COBERTURA;
-  renderDropCobertura(lista);
   document.getElementById('cobertura-medica').value = '';
+  if (!_portal.anchor || _portal.anchor.id !== 'search-cobertura') {
+    abrirPortal(document.getElementById('search-cobertura'), _coberturaFiltradas, (op) => seleccionarCobertura(op));
+  } else {
+    refrescarPortal();
+  }
   updateSteps();
 }
 
@@ -2522,27 +2661,7 @@ function cerrarDropdownCobertura() {
   searchInput._hiddenAnterior = undefined;
 }
 
-function keyNavCobertura(e) {
-  const drop  = document.getElementById('drop-cobertura');
-  const items = drop.querySelectorAll('.search-option:not(.no-results)');
-  if (!drop.classList.contains('open') || !items.length) return;
-  if (e.key === 'ArrowDown') {
-    e.preventDefault();
-    coberturaHiIdx = Math.min(coberturaHiIdx + 1, items.length - 1);
-  } else if (e.key === 'ArrowUp') {
-    e.preventDefault();
-    coberturaHiIdx = Math.max(coberturaHiIdx - 1, 0);
-  } else if (e.key === 'Enter' && coberturaHiIdx >= 0) {
-    e.preventDefault();
-    seleccionarCobertura(items[coberturaHiIdx].textContent);
-    return;
-  } else if (e.key === 'Escape') {
-    cerrarDropdownCobertura();
-    return;
-  }
-  items.forEach((it, i) => it.classList.toggle('highlighted', i === coberturaHiIdx));
-  if (coberturaHiIdx >= 0) items[coberturaHiIdx].scrollIntoView({ block: 'nearest' });
-}
+function keyNavCobertura(e) { _portalKeyNav(e); }
 
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -2584,25 +2703,23 @@ function renderDropDieta(lista) {
   dietaHiIdx = -1;
 }
 
-function abrirDropdownDieta() {
+function _dietaFiltradas() {
   const q = document.getElementById('search-dieta').value.trim().toLowerCase();
-  const lista = q
-    ? OPCIONES_DIETA.filter(o => o.toLowerCase().includes(q))
-    : OPCIONES_DIETA;
-  renderDropDieta(lista);
+  return q ? OPCIONES_DIETA.filter(o => o.toLowerCase().includes(q)) : OPCIONES_DIETA;
+}
+
+function abrirDropdownDieta() {
+  const si = document.getElementById('search-dieta');
+  abrirPortal(si, _dietaFiltradas, (op) => seleccionarDieta(op));
 }
 
 function filtrarDieta() {
-  const q = document.getElementById('search-dieta').value.trim().toLowerCase();
-  const lista = OPCIONES_DIETA.filter(o => o.toLowerCase().includes(q));
-  // Si no coincide ninguna opción predefinida, ofrecer "Otro: ..."
-  if (!lista.length) {
-    renderDropDieta([]);
-  } else {
-    renderDropDieta(lista);
-  }
-  // Limpiar valor oculto mientras el usuario escribe
   document.getElementById('salud-dieta-detalle').value = '';
+  if (!_portal.anchor || _portal.anchor.id !== 'search-dieta') {
+    abrirPortal(document.getElementById('search-dieta'), _dietaFiltradas, (op) => seleccionarDieta(op));
+  } else {
+    refrescarPortal();
+  }
   updateSteps();
 }
 
@@ -2640,26 +2757,7 @@ function seleccionarDieta(op) {
   document.getElementById('err-salud-dieta-detalle').style.display = 'none';
 }
 
-function keyNavDieta(e) {
-  const drop  = document.getElementById('drop-dieta');
-  const items = drop.querySelectorAll('.search-option:not(.no-results)');
-  if (!drop.classList.contains('open') || !items.length) return;
-  if (e.key === 'ArrowDown') {
-    e.preventDefault();
-    dietaHiIdx = Math.min(dietaHiIdx + 1, items.length - 1);
-  } else if (e.key === 'ArrowUp') {
-    e.preventDefault();
-    dietaHiIdx = Math.max(dietaHiIdx - 1, 0);
-  } else if (e.key === 'Enter' && dietaHiIdx >= 0) {
-    e.preventDefault();
-    seleccionarDieta(items[dietaHiIdx].textContent);
-    return;
-  } else if (e.key === 'Escape') {
-    drop.classList.remove('open');
-    return;
-  }
-  items.forEach((it, i) => it.classList.toggle('highlighted', i === dietaHiIdx));
-}
+function keyNavDieta(e) { _portalKeyNav(e); }
 
 // Cerrar dropdown de dieta al hacer clic fuera
 document.addEventListener('click', e => {
@@ -2797,5 +2895,6 @@ function resetForm() {
 })();
 
 </script>
+<div id="portal-dropdown"></div>
 </body>
 </html>
