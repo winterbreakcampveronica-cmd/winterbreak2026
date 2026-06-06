@@ -673,6 +673,138 @@
     -webkit-text-fill-color: transparent; color: transparent;
   }
 
+  /* ════════════════════════════════════════════════════════════════════
+     FONDO OSCURO COMPARTIDO (para hoja de desplegable y calendario en celu)
+     ════════════════════════════════════════════════════════════════════ */
+  #overlay-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(61,32,16,0.45);
+    z-index: 999990;
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+  }
+  #overlay-backdrop.open { display: block; }
+  body.sheet-abierta { overflow: hidden; }
+
+  @keyframes sheetUp {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+
+  /* ════════════════════════════════════════════════════════════════════
+     DESPLEGABLE COMO HOJA A PANTALLA COMPLETA (solo en celular)
+     ════════════════════════════════════════════════════════════════════ */
+  #portal-dropdown.portal-sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    width: 100%;
+    max-height: 85vh;
+    height: auto;
+    border-radius: 22px 22px 0 0;
+    border: none;
+    border-top: 1.5px solid var(--border);
+    box-shadow: 0 -8px 40px rgba(0,0,0,0.25);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: sheetUp 0.22s cubic-bezier(.4,0,.2,1) both;
+    padding: 0;
+  }
+  .sheet-head {
+    flex: 0 0 auto;
+    padding: 0.9rem 1rem 0.7rem;
+    border-bottom: 1px solid var(--border);
+    background: #fff;
+  }
+  .sheet-handle {
+    width: 42px; height: 5px; border-radius: 100px;
+    background: var(--border);
+    margin: 0 auto 0.8rem;
+  }
+  .sheet-titlebar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 0.75rem;
+  }
+  .sheet-title {
+    font-size: 0.78rem; font-weight: 800; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .sheet-close {
+    border: none; background: rgba(244,131,58,0.12); color: var(--accent-dark);
+    width: 34px; height: 34px; border-radius: 50%; font-size: 20px;
+    cursor: pointer; line-height: 1; display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+  }
+  .sheet-search {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    background: var(--input-bg);
+    font-family: 'Nunito', sans-serif;
+    font-size: 16px;            /* 16px evita el zoom automático de iOS */
+    font-weight: 600;
+    color: var(--text);
+    outline: none;
+  }
+  .sheet-search:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(244,131,58,0.18);
+    background: #fff;
+  }
+  .sheet-list {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  #portal-dropdown.portal-sheet .search-option {
+    padding: 1rem 1.1rem;          /* objetivos de toque grandes */
+    font-size: 1.02rem;
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+  }
+  #portal-dropdown.portal-sheet .search-option.highlighted,
+  #portal-dropdown.portal-sheet .search-option:active {
+    background: #FFF5EB; color: var(--accent-dark);
+  }
+
+  /* ════════════════════════════════════════════════════════════════════
+     AJUSTES GENERALES PARA CELULAR
+     ════════════════════════════════════════════════════════════════════ */
+  @media (max-width: 600px) {
+    body { padding: 1rem 0.7rem; align-items: flex-start; }
+    .container { max-width: 100%; }
+    .card { padding: 1.4rem; padding-top: 0; border-radius: 22px; }
+    .header { margin-bottom: 1.6rem; }
+
+    /* 16px corta el zoom automático de iOS al enfocar un campo */
+    input[type="text"], input[type="tel"], select { font-size: 16px; }
+
+    /* Apilar columnas: cada campo ocupa todo el ancho, más fácil de tocar */
+    .two-col { grid-template-columns: 1fr; gap: 0; }
+
+    .field { margin-bottom: 1.2rem; }
+
+    /* Calendario como ventana centrada */
+    .cal-popup.open {
+      top: 50% !important;
+      left: 50% !important;
+      bottom: auto !important;
+      transform: translate(-50%, -50%);
+      width: min(330px, 92vw);
+      max-height: 88vh;
+      overflow-y: auto;
+      z-index: 999995;
+    }
+  }
 </style>
 </head>
 <body>
@@ -1754,20 +1886,44 @@ let _portal = {
   render: null,      // funcion que devuelve el array de items a mostrar (segun texto actual)
   onSelect: null     // que hacer al elegir
 };
+let _portalSheetSearch = null;  // buscador propio de la hoja en celular
 
 function _portalEl() { return document.getElementById('portal-dropdown'); }
+function _backdropEl() { return document.getElementById('overlay-backdrop'); }
+function _esMobile() { return window.matchMedia('(max-width: 600px)').matches; }
+
+function _abrirBackdrop() {
+  const b = _backdropEl();
+  if (b) {
+    b.classList.add('open');
+    b.onclick = () => { cerrarTodosLosDropdowns(); if (typeof cerrarCal === 'function') cerrarCal(); };
+  }
+  document.body.classList.add('sheet-abierta');
+}
+function _cerrarBackdrop() {
+  const b = _backdropEl();
+  if (b) b.classList.remove('open');
+  document.body.classList.remove('sheet-abierta');
+}
 
 function cerrarTodosLosDropdowns() {
   const portal = _portalEl();
-  if (portal) { portal.classList.remove('open'); portal.innerHTML = ''; }
+  if (portal) {
+    portal.classList.remove('open', 'portal-sheet');
+    portal.innerHTML = '';
+    portal.style.cssText = '';   // limpiar estilos de posicionamiento de escritorio
+  }
   _portal = { anchor: null, render: null, onSelect: null };
+  _portalSheetSearch = null;
   const cal = document.getElementById('cal-popup');
   if (cal) cal.classList.remove('open');
+  _cerrarBackdrop();
 }
 
 function _posicionarPortal() {
   const portal = _portalEl();
   if (!portal || !_portal.anchor) return;
+  if (_esMobile()) return;   // en celular es una hoja fija: no se reposiciona
   const rect = _portal.anchor.getBoundingClientRect();
   portal.style.left = rect.left + 'px';
   portal.style.width = rect.width + 'px';
@@ -1782,10 +1938,39 @@ function _posicionarPortal() {
   }
 }
 
+// Crea un item de opción. La selección es por 'click', que en celular SOLO
+// se dispara con un toque real (no cuando arrastrás para hacer scroll).
+function _crearOpcion(it) {
+  const div = document.createElement('div');
+  div.className = 'search-option';
+  if (typeof it === 'object') { div.innerHTML = it.html; div._valor = it.valor; }
+  else { div.textContent = it; div._valor = it; }
+  div.addEventListener('click', (e) => {
+    e.preventDefault(); e.stopPropagation();
+    const v = div._valor;
+    if (_portal.onSelect) _portal.onSelect(v);
+    cerrarTodosLosDropdowns();
+  });
+  return div;
+}
+
+function _tituloDeAnchor(anchor) {
+  if (!anchor) return 'Elegí una opción';
+  const f = anchor.closest('.field') || anchor.closest('.two-col');
+  const lab = f && f.querySelector('label');
+  if (lab) return lab.textContent.trim();
+  return anchor.placeholder || 'Elegí una opción';
+}
+
 function _pintarPortal() {
   const portal = _portalEl();
   if (!portal || !_portal.render) return;
   const items = _portal.render();
+
+  if (_esMobile()) { _pintarPortalSheet(items); return; }
+
+  // ───── Escritorio: comportamiento original (pegado al campo) ─────
+  portal.classList.remove('portal-sheet');
   portal.innerHTML = '';
   if (!items || items.length === 0) {
     const d = document.createElement('div');
@@ -1793,25 +1978,88 @@ function _pintarPortal() {
     d.textContent = 'Sin resultados';
     portal.appendChild(d);
   } else {
-    items.forEach(it => {
-      const div = document.createElement('div');
-      div.className = 'search-option';
-      if (typeof it === 'object') {
-        div.innerHTML = it.html;
-        div._valor = it.valor;
-      } else {
-        div.textContent = it;
-        div._valor = it;
-      }
-      const elegir = (e) => { e.preventDefault(); e.stopPropagation(); const v = div._valor; _portal.onSelect(v); cerrarTodosLosDropdowns(); };
-      div.addEventListener('mousedown', elegir);
-      div.addEventListener('touchend', elegir);
-      portal.appendChild(div);
-    });
+    items.forEach(it => portal.appendChild(_crearOpcion(it)));
   }
   _portalHiIdx = -1;
   portal.classList.add('open');
   _posicionarPortal();
+}
+
+// ───── Celular: el desplegable es una hoja a pantalla completa ─────
+function _pintarPortalSheet(items) {
+  const portal = _portalEl();
+  let lista = portal.querySelector('.sheet-list');
+
+  // Construir la hoja sólo la primera vez (luego sólo repintamos la lista)
+  if (!portal.classList.contains('portal-sheet') || !lista) {
+    portal.classList.add('portal-sheet');
+    portal.style.cssText = '';
+    portal.innerHTML = '';
+
+    const head = document.createElement('div');
+    head.className = 'sheet-head';
+
+    const handle = document.createElement('div');
+    handle.className = 'sheet-handle';
+
+    const bar = document.createElement('div');
+    bar.className = 'sheet-titlebar';
+    const title = document.createElement('div');
+    title.className = 'sheet-title';
+    title.textContent = _tituloDeAnchor(_portal.anchor);
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'sheet-close';
+    close.innerHTML = '&times;';
+    close.addEventListener('click', (e) => { e.preventDefault(); cerrarTodosLosDropdowns(); });
+    bar.appendChild(title);
+    bar.appendChild(close);
+
+    const search = document.createElement('input');
+    search.type = 'text';
+    search.className = 'sheet-search';
+    search.autocomplete = 'off';
+    search.placeholder = (_portal.anchor && _portal.anchor.placeholder) || 'Buscar...';
+    search.value = (_portal.anchor && _portal.anchor.value) || '';
+    // Lo que se escribe acá se copia al campo del formulario y dispara su
+    // mismo filtrado de siempre (reutilizamos toda la lógica ya existente).
+    search.addEventListener('input', () => {
+      if (_portal.anchor) {
+        _portal.anchor.value = search.value;
+        _portal.anchor.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    });
+
+    head.appendChild(handle);
+    head.appendChild(bar);
+    head.appendChild(search);
+
+    lista = document.createElement('div');
+    lista.className = 'sheet-list';
+
+    portal.appendChild(head);
+    portal.appendChild(lista);
+    _portalSheetSearch = search;
+
+    portal.classList.add('open');
+    _abrirBackdrop();
+
+    // Pasar el foco al buscador de la hoja y soltar el del campo del form
+    // (así el teclado queda en la hoja y no descoloca la pantalla de atrás)
+    setTimeout(() => { try { _portal.anchor && _portal.anchor.blur(); } catch (e) {} search.focus(); }, 30);
+  }
+
+  // (re)pintar la lista de opciones
+  lista.innerHTML = '';
+  if (!items || items.length === 0) {
+    const d = document.createElement('div');
+    d.className = 'search-option no-results';
+    d.textContent = 'Sin resultados';
+    lista.appendChild(d);
+  } else {
+    items.forEach(it => lista.appendChild(_crearOpcion(it)));
+  }
+  _portalHiIdx = -1;
 }
 
 function abrirPortal(anchorEl, renderFn, onSelect) {
@@ -1830,7 +2078,8 @@ function refrescarPortal() {
 document.addEventListener('mousedown', e => {
   const portal = _portalEl();
   if (portal && portal.classList.contains('open') &&
-      !portal.contains(e.target) && e.target !== _portal.anchor) {
+      !portal.contains(e.target) && e.target !== _portal.anchor &&
+      e.target !== _portalSheetSearch) {
     cerrarTodosLosDropdowns();
   }
 });
@@ -2066,12 +2315,22 @@ function abrirCal() {
   else irStep('dia');
   popup.classList.add('open');
   posicionarCal();
+  if (_esMobile()) {
+    setTimeout(() => { try { document.getElementById('fecha-nac').blur(); } catch (e) {} }, 0);
+    _abrirBackdrop();
+  }
 }
 
 function posicionarCal() {
   const popup = document.getElementById('cal-popup');
   const anchor = document.getElementById('fecha-nac');
   if (!popup.classList.contains('open')) return;
+  if (_esMobile()) {                 // en celular lo centra el CSS
+    popup.style.left = '';
+    popup.style.top = '';
+    popup.style.bottom = '';
+    return;
+  }
   const rect = anchor.getBoundingClientRect();
   const w = popup.offsetWidth || 288;
   let left = rect.left;
@@ -2090,13 +2349,16 @@ function posicionarCal() {
 function toggleCal() {
   const p = document.getElementById('cal-popup');
   if (p.classList.contains('open')) {
-    p.classList.remove('open');
+    cerrarCal();
   } else {
     abrirCal();
-    document.getElementById('fecha-nac').focus();
+    if (!_esMobile()) document.getElementById('fecha-nac').focus();
   }
 }
-function cerrarCal() { document.getElementById('cal-popup').classList.remove('open'); }
+function cerrarCal() {
+  document.getElementById('cal-popup').classList.remove('open');
+  _cerrarBackdrop();
+}
 
 document.addEventListener('click', e => {
   if (!e.target.closest('.date-wrap') && !e.target.closest('.cal-popup')) cerrarCal();
@@ -2127,7 +2389,7 @@ function _portalKeyNav(e) {
     _portalHiIdx = Math.max(_portalHiIdx - 1, 0);
   } else if (e.key === 'Enter') {
     e.preventDefault();
-    if (_portalHiIdx >= 0 && items[_portalHiIdx]) items[_portalHiIdx].dispatchEvent(new MouseEvent('mousedown'));
+    if (_portalHiIdx >= 0 && items[_portalHiIdx]) items[_portalHiIdx].dispatchEvent(new MouseEvent('click', { bubbles: true }));
     return;
   } else if (e.key === 'Escape') {
     cerrarTodosLosDropdowns(); return;
@@ -3152,6 +3414,7 @@ function validarSoloLetras(id) {
 })();
 
 </script>
+<div id="overlay-backdrop"></div>
 <div id="portal-dropdown"></div>
 </body>
 </html>
