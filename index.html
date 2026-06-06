@@ -2394,6 +2394,23 @@ function enviar() {
     if (primerError) primerError.scrollIntoView({ behavior: 'smooth', block: 'center' });
     return;
   }
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwQGf6wZeabhW1bFxfjAbmQtaTAoMGmgI8rdBBY7_lmHyCkmcerebYxegdhMJ04NYR1/exec';
+
+  const iglesiaNombre = document.getElementById('iglesia-nombre').value.trim();
+  const iglesiaCiudad = document.getElementById('iglesia-ciudad').value.trim();
+  const iglesiaPastor = document.getElementById('iglesia-pastor').value.trim();
+
+  const saludEnf    = document.querySelector('input[name="salud-enf"]:checked')?.value || '';
+  const saludEnfDet = document.getElementById('salud-enf-detalle')?.value.trim() || '';
+  const saludMed    = document.querySelector('input[name="salud-med"]:checked')?.value || '';
+  const saludMedDet = document.getElementById('salud-med-detalle')?.value.trim() || '';
+  const saludDieta  = document.querySelector('input[name="salud-dieta"]:checked')?.value || '';
+  const saludDietaDet = document.getElementById('salud-dieta-detalle')?.value.trim() || '';
+  const saludOtro   = document.querySelector('input[name="salud-otro"]:checked')?.value || '';
+  const saludOtroDet = document.getElementById('salud-otro-detalle')?.value.trim() || '';
+
+  const edad = document.getElementById('edad-badge')?.textContent?.trim() || '';
+
   const prov = document.getElementById('provincia').value;
   const mun = document.getElementById('municipio').value;
   const loc = document.getElementById('localidad').value;
@@ -2451,24 +2468,6 @@ function enviar() {
     document.getElementById('res-row-iglesia-pastor').style.display = '';
   }
 
-  // ── Enviar a Google Sheets ──
-  // Reemplazá AQUI_TU_URL por la URL de tu Web App de Google Apps Script
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwQGf6wZeabhW1bFxfjAbmQtaTAoMGmgI8rdBBY7_lmHyCkmcerebYxegdhMJ04NYR1/exec';
-
-  const iglesiaNombre = document.getElementById('iglesia-nombre').value.trim();
-  const iglesiaCiudad = document.getElementById('iglesia-ciudad').value.trim();
-  const iglesiaPastor = document.getElementById('iglesia-pastor').value.trim();
-
-  const saludEnf    = document.querySelector('input[name="salud-enf"]:checked')?.value || '';
-  const saludEnfDet = document.getElementById('salud-enf-detalle')?.value.trim() || '';
-  const saludMed    = document.querySelector('input[name="salud-med"]:checked')?.value || '';
-  const saludMedDet = document.getElementById('salud-med-detalle')?.value.trim() || '';
-  const saludDieta  = document.querySelector('input[name="salud-dieta"]:checked')?.value || '';
-  const saludDietaDet = document.getElementById('salud-dieta-detalle')?.value.trim() || '';
-  const saludOtro   = document.querySelector('input[name="salud-otro"]:checked')?.value || '';
-  const saludOtroDet = document.getElementById('salud-otro-detalle')?.value.trim() || '';
-
-  const edad = document.getElementById('edad-badge')?.textContent?.trim() || '';
 
   const payload = {
     nombre:            nombre,
