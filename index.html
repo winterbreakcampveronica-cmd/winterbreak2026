@@ -876,7 +876,7 @@
         </div>
         <div class="field" id="field-numero">
           <label for="numero">Número</label>
-          <input type="text" id="numero" placeholder="Ej: 1234" maxlength="6" oninput="updateSteps()" />
+          <input type="text" id="numero" placeholder="Ej: 1234" maxlength="7" oninput="updateSteps()" />
           <p class="error-msg" id="err-numero">Obligatorio</p>
         </div>
       </div>
@@ -1037,20 +1037,30 @@
         <p class="error-msg" id="err-salud-otro-detalle">Obligatorio</p>
       </div>
 
-      <div class="section-title">⛪ Datos de tu iglesia</div>
+      <div class="section-title">⛪ Datos de tu iglesia <span class="badge-opcional">Opcional</span></div>
 
       <div class="field">
         <label for="iglesia-nombre">Iglesia a la que asistís</label>
         <input type="text" id="iglesia-nombre" placeholder="Nombre de tu iglesia" oninput="updateSteps()" />
       </div>
 
-      <div class="field">
-        <label for="iglesia-ciudad">Localidad de la iglesia <span class="badge-opcional">Opcional</span></label>
-        <input type="text" id="iglesia-ciudad" placeholder="Ej: Buenos Aires, Rosario..." oninput="updateSteps()" />
+      <div class="field" id="field-iglesia-ciudad">
+        <label>Municipio de la iglesia</label>
+        <div class="search-wrap" id="wrap-iglesia-ciudad">
+          <input type="text" id="search-iglesia-ciudad" placeholder="Buscar municipio / partido..."
+            autocomplete="off"
+            oninput="filtrarIglesiaCiudad()"
+            onfocus="abrirDropdownIglesiaCiudad()"
+            onclick="abrirDropdownIglesiaCiudad()"
+            onkeydown="keyNavIglesiaCiudad(event)" />
+          <span class="search-arrow">&#9662;</span>
+          <div class="search-dropdown" id="drop-iglesia-ciudad"></div>
+        </div>
+        <input type="hidden" id="iglesia-ciudad" />
       </div>
 
       <div class="field">
-        <label for="iglesia-pastor">Pastor / Líder de tu iglesia <span class="badge-opcional">Opcional</span></label>
+        <label for="iglesia-pastor">Pastor / Líder de tu iglesia</label>
         <input type="text" id="iglesia-pastor" placeholder="Nombre del pastor o líder" oninput="updateSteps()" />
       </div>
 
@@ -1077,16 +1087,32 @@
         <div><span>Nombre</span><strong id="res-nombre"></strong></div>
         <div><span>Apellido</span><strong id="res-apellido"></strong></div>
         <div><span>Género</span><strong id="res-sexo"></strong></div>
-        <div><span>Correo</span><strong id="res-email"></strong></div>
         <div><span>Fecha de nacimiento</span><strong id="res-fecha"></strong></div>
+        <div><span>Edad</span><strong id="res-edad"></strong></div>
+        <div><span>DNI</span><strong id="res-dni"></strong></div>
+        <div><span>Correo electrónico</span><strong id="res-email"></strong></div>
         <div><span>Celular personal</span><strong id="res-celular"></strong></div>
         <div><span>Celular de contacto de emergencia</span><strong id="res-telalt"></strong></div>
         <div><span>Nombre del contacto de emergencia</span><strong id="res-nombre-emergencia"></strong></div>
-        <div><span>Relación con el contacto</span><strong id="res-relacion-emergencia"></strong></div>
+        <div><span>Relación con el contacto de emergencia</span><strong id="res-relacion-emergencia"></strong></div>
+        <div><span>Calle</span><strong id="res-calle"></strong></div>
+        <div><span>Número</span><strong id="res-numero"></strong></div>
         <div><span>Provincia</span><strong id="res-provincia"></strong></div>
         <div><span id="label-res-municipio">Municipio / Partido</span><strong id="res-municipio"></strong></div>
         <div><span>Localidad</span><strong id="res-localidad"></strong></div>
-
+        <div><span>Cobertura médica</span><strong id="res-cobertura"></strong></div>
+        <div id="res-row-afiliado"><span>Número de afiliado</span><strong id="res-afiliado"></strong></div>
+        <div><span>¿Enfermedad / alergia?</span><strong id="res-salud-enf"></strong></div>
+        <div id="res-row-salud-enf-det" style="display:none"><span>Detalle enfermedad / alergia</span><strong id="res-salud-enf-det"></strong></div>
+        <div><span>¿Medicación?</span><strong id="res-salud-med"></strong></div>
+        <div id="res-row-salud-med-det" style="display:none"><span>Detalle medicación</span><strong id="res-salud-med-det"></strong></div>
+        <div><span>¿Restricción alimentaria?</span><strong id="res-salud-dieta"></strong></div>
+        <div id="res-row-salud-dieta-det" style="display:none"><span>Detalle dieta</span><strong id="res-salud-dieta-det"></strong></div>
+        <div><span>¿Otros datos de salud?</span><strong id="res-salud-otro"></strong></div>
+        <div id="res-row-salud-otro-det" style="display:none"><span>Detalle otros datos de salud</span><strong id="res-salud-otro-det"></strong></div>
+        <div><span>Iglesia a la que asistís</span><strong id="res-iglesia-nombre"></strong></div>
+        <div id="res-row-iglesia-ciudad" style="display:none"><span>Municipio de la iglesia</span><strong id="res-iglesia-ciudad"></strong></div>
+        <div id="res-row-iglesia-pastor" style="display:none"><span>Pastor / Líder de tu iglesia</span><strong id="res-iglesia-pastor"></strong></div>
       </div>
       <button class="btn-reset" onclick="resetForm()">Completar otra respuesta</button>
     </div>
@@ -1816,10 +1842,14 @@ function abrirDropdown(campo) {
   abrirPortal(searchInput, () => _opcionesFiltradas(campo), (val) => seleccionar(campo, val));
 }
 
+function _sinTildes(str) {
+  return str.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+}
+
 function _opcionesFiltradas(campo) {
   const base = campo === 'provincia' ? opcionesProv : campo === 'municipio' ? opcionesMun : opcionesLoc;
-  const q = document.getElementById('search-' + campo).value.trim().toLowerCase();
-  return q ? base.filter(o => o.toLowerCase().includes(q)) : base;
+  const q = _sinTildes(document.getElementById('search-' + campo).value.trim());
+  return q ? base.filter(o => _sinTildes(o).includes(q)) : base;
 }
 
 function cerrarTodos() {
@@ -2374,15 +2404,52 @@ function enviar() {
   document.getElementById('res-nombre').textContent = nombre;
   document.getElementById('res-apellido').textContent = apellido;
   document.getElementById('res-sexo').textContent = sexo;
-  document.getElementById('res-email').textContent = email;
   document.getElementById('res-fecha').textContent = fecha;
+  document.getElementById('res-edad').textContent = edad || '—';
+  document.getElementById('res-dni').textContent = document.getElementById('dni').value.trim();
+  document.getElementById('res-email').textContent = email;
   document.getElementById('res-celular').textContent = celular;
   document.getElementById('res-telalt').textContent = telalt || '—';
+  document.getElementById('res-nombre-emergencia').textContent = nombreEmergencia;
+  document.getElementById('res-relacion-emergencia').textContent = relacionEmergencia;
+  document.getElementById('res-calle').textContent = document.getElementById('calle').value.trim();
+  document.getElementById('res-numero').textContent = document.getElementById('numero').value.trim();
   document.getElementById('res-provincia').textContent = prov;
   document.getElementById('res-municipio').textContent = mun;
   document.getElementById('res-localidad').textContent = loc;
-  document.getElementById('res-nombre-emergencia').textContent = nombreEmergencia;
-  document.getElementById('res-relacion-emergencia').textContent = relacionEmergencia;
+  document.getElementById('res-cobertura').textContent = document.getElementById('cobertura-medica').value.trim();
+  document.getElementById('res-afiliado').textContent = document.getElementById('num-afiliado').value.trim() || '—';
+  // Salud
+  document.getElementById('res-salud-enf').textContent = saludEnf;
+  if (saludEnf === 'Sí' && saludEnfDet) {
+    document.getElementById('res-salud-enf-det').textContent = saludEnfDet;
+    document.getElementById('res-row-salud-enf-det').style.display = '';
+  }
+  document.getElementById('res-salud-med').textContent = saludMed;
+  if (saludMed === 'Sí' && saludMedDet) {
+    document.getElementById('res-salud-med-det').textContent = saludMedDet;
+    document.getElementById('res-row-salud-med-det').style.display = '';
+  }
+  document.getElementById('res-salud-dieta').textContent = saludDieta;
+  if (saludDieta === 'Sí' && saludDietaDet) {
+    document.getElementById('res-salud-dieta-det').textContent = saludDietaDet;
+    document.getElementById('res-row-salud-dieta-det').style.display = '';
+  }
+  document.getElementById('res-salud-otro').textContent = saludOtro;
+  if (saludOtro === 'Sí' && saludOtroDet) {
+    document.getElementById('res-salud-otro-det').textContent = saludOtroDet;
+    document.getElementById('res-row-salud-otro-det').style.display = '';
+  }
+  // Iglesia
+  document.getElementById('res-iglesia-nombre').textContent = iglesiaNombre || '—';
+  if (iglesiaCiudad) {
+    document.getElementById('res-iglesia-ciudad').textContent = iglesiaCiudad;
+    document.getElementById('res-row-iglesia-ciudad').style.display = '';
+  }
+  if (iglesiaPastor) {
+    document.getElementById('res-iglesia-pastor').textContent = iglesiaPastor;
+    document.getElementById('res-row-iglesia-pastor').style.display = '';
+  }
 
   // ── Enviar a Google Sheets ──
   // Reemplazá AQUI_TU_URL por la URL de tu Web App de Google Apps Script
@@ -2494,8 +2561,8 @@ function renderDropRelacion(lista) {
 }
 
 function _relacionFiltradas() {
-  const q = document.getElementById('search-relacion').value.trim().toLowerCase();
-  return q ? OPCIONES_RELACION.filter(o => o.toLowerCase().includes(q)) : OPCIONES_RELACION;
+  const q = _sinTildes(document.getElementById('search-relacion').value.trim());
+  return q ? OPCIONES_RELACION.filter(o => _sinTildes(o).includes(q)) : OPCIONES_RELACION;
 }
 
 function abrirDropdownRelacion() {
@@ -2768,8 +2835,18 @@ function renderDropDieta(lista) {
 }
 
 function _dietaFiltradas() {
-  const q = document.getElementById('search-dieta').value.trim().toLowerCase();
-  return q ? OPCIONES_DIETA.filter(o => o.toLowerCase().includes(q)) : OPCIONES_DIETA;
+  const q = document.getElementById('search-dieta').value.trim();
+  const ql = _sinTildes(q);
+  const filtradas = q ? OPCIONES_DIETA.filter(o => _sinTildes(o).includes(ql)) : OPCIONES_DIETA;
+  // Si escribió algo y no hay coincidencias, ofrecer lo que escribió como opción
+  if (q && filtradas.length === 0) {
+    return [{ html: '✏️ Usar "<strong>' + q + '</strong>" como restricción personalizada', valor: q }];
+  }
+  // Si escribió algo y hay coincidencias pero ninguna es exacta, agregar opción de usar texto libre
+  if (q && filtradas.length > 0 && !filtradas.some(o => o.toLowerCase() === ql)) {
+    return [...filtradas, { html: '✏️ Usar "<strong>' + q + '</strong>" como restricción personalizada', valor: q }];
+  }
+  return filtradas;
 }
 
 function abrirDropdownDieta() {
@@ -2778,12 +2855,14 @@ function abrirDropdownDieta() {
 }
 
 function filtrarDieta() {
-  document.getElementById('salud-dieta-detalle').value = '';
   if (!_portal.anchor || _portal.anchor.id !== 'search-dieta') {
     abrirPortal(document.getElementById('search-dieta'), _dietaFiltradas, (op) => seleccionarDieta(op));
   } else {
     refrescarPortal();
   }
+  // Guardar en tiempo real lo que escribe (texto libre)
+  const q = document.getElementById('search-dieta').value.trim();
+  document.getElementById('salud-dieta-detalle').value = q;
   updateSteps();
 }
 
@@ -2908,7 +2987,7 @@ function resetForm() {
   const eb = document.getElementById('edad-badge'); if(eb){ eb.style.display='none'; eb.textContent=''; }
   ['sexo'].forEach(id => document.getElementById(id).value = '');
   ['provincia','municipio','localidad'].forEach(id => document.getElementById(id).value = '');
-  ['search-provincia','search-municipio','search-localidad'].forEach(id => document.getElementById(id).value = '');
+  ['search-provincia','search-municipio','search-localidad','search-iglesia-ciudad'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('search-provincia').placeholder = 'Buscar provincia...';
   document.getElementById('search-municipio').placeholder = 'Primero elegí una provincia...';
   document.getElementById('search-municipio').disabled = true;
@@ -2944,6 +3023,57 @@ function resetForm() {
   updateSteps();
 }
 
+
+// ── Dropdown buscador localidad de iglesia ──────────────────────────────────
+const OPCIONES_IGLESIA_CIUDAD = ["12 de Octubre", "2 de Abril", "25 de Mayo", "9 de Julio", "Adolfo Alsina", "Adolfo Gonzales Chaves", "Aguirre", "Albardón", "Alberdi", "Alberti", "Almirante Brown", "Aluminé", "Ambato", "Ancasti", "Andalgalá", "Angaco", "Anta", "Antofagasta de la Sierra", "Antártida e Islas del Atlántico Sur", "Apóstoles", "Arauco", "Arrecifes", "Atreucó", "Avellaneda", "Ayacucho", "Azul", "Añelo", "Bahía Blanca", "Balcarce", "Banda", "Baradero", "Bariloche", "Belgrano", "Bella Vista", "Belén", "Benito Juárez", "Berazategui", "Berisso", "Bermejo", "Berón de Astrada", "Biedma", "Bolívar", "Bragado", "Brandsen", "Burruyacú", "Cafayate", "Cainguás", "Calamuchita", "Caleu Caleu", "Calingasta", "Campana", "Campo Santo", "Candelaria", "Capayán", "Capital", "Capitán Sarmiento", "Carlos Casares", "Carlos Tejedor", "Carmen de Areco", "Caseros", "Castellanos", "Castelli", "Castro Barros", "Catriló", "Catán Lil", "Caucete", "Cañuelas", "Cerrillos", "Chacabuco", "Chalileo", "Chamical", "Chapaleufú", "Chascomús", "Chical Co", "Chicligasta", "Chicoana", "Chilecito", "Chimbas", "Chivilcoy", "Chos Malal", "Choya", "Cochinoca", "Collón Curá", "Colón", "Comandante Fernández", "Comuna 1", "Comuna 10", "Comuna 11", "Comuna 12", "Comuna 13", "Comuna 14", "Comuna 15", "Comuna 2", "Comuna 3", "Comuna 4", "Comuna 5", "Comuna 6", "Comuna 7", "Comuna 8", "Comuna 9", "Concepción", "Concordia", "Conesa", "Confluencia", "Conhelo", "Constitución", "Copo", "Coronel Dorrego", "Coronel Felipe Varela", "Coronel Pringles", "Coronel Rosales", "Coronel Suárez", "Corpen Aike", "Cruz Alta", "Cruz del Eje", "Curacó", "Curuzú Cuatiá", "Cushamen", "Daireaux", "Deseado", "Diamante", "Dolores", "Dr. Manuel Belgrano", "El Alto", "El Carmen", "El Cuy", "Eldorado", "Empedrado", "Ensenada", "Escalante", "Escobar", "Esquina", "Esteban Echeverría", "Exaltación de la Cruz", "Ezeiza", "Famailla", "Famatina", "Federación", "Federal", "Feliciano", "Figueroa", "Florencio Varela", "Florentino Ameghino", "Formosa", "Fray Justo Santa María de Oro", "Fray Mamerto Esquiú", "Futaleufú", "Gaimán", "Garay", "Gastre", "General Acha", "General Alvarado", "General Alvear", "General Arenales", "General Belgrano", "General Donovan", "General Guido", "General Güemes", "General José de San Martín", "General Juan Facundo Quiroga", "General Lamadrid", "General Las Heras", "General Lavalle", "General López", "General Madariaga", "General Manuel Belgrano", "General Obligado", "General Paz", "General Pedernera", "General Pico", "General Pinto", "General Pueyrredón", "General Roca", "General Rodríguez", "General San Martín", "General Taboada", "General Viamonte", "General Villegas", "General Ángel Vicente Peñaloza", "Gobernador Dupuy", "Godoy Cruz", "Goya", "Graneros", "Guachipas", "Gualeguay", "Gualeguaychú", "Guaminí", "Guaraní", "Guasayán", "Guaymallén", "Güer Aike", "Hipólito Yrigoyen", "Hucal", "Huiliches", "Humahuaca", "Hurlingham", "Iglesia", "Iguazú", "Independencia", "Iriondo", "Iruya", "Ischilín", "Islas del Ibicuy", "Itatí", "Ituzaingó", "Jiménez", "José C. Paz", "Juan Bautista Alberdi", "Juan F. Ibarra", "Juan Martín de Pueyrredón", "Junín", "Juárez Celman", "Jáchal", "La Caldera", "La Candelaria", "La Capital", "La Cocha", "La Costa", "La Matanza", "La Paz", "La Plata", "La Poma", "La Viña", "Lago Argentino", "Lago Buenos Aires", "Laishí", "Languiñeo", "Lanús", "Laprida", "Las Colonias", "Las Flores", "Las Heras", "Lavalle", "Leales", "Leandro N. Alem", "Ledesma", "Lezama", "Libertad", "Libertador General San Martín", "Lihuel Calel", "Limay Mahuida", "Lincoln", "Lobería", "Lobos", "Lomas de Zamora", "Loncopué", "Loreto", "Los Andes", "Los Lagos", "Loventué", "Luján", "Luján de Cuyo", "Lules", "Lácar", "Magallanes", "Magdalena", "Maipú", "Malargüe", "Malvinas Argentinas", "Mar Chiquita", "Maraco", "Marcos Juárez", "Marcos Paz", "Matacos", "Mayor Luis J. Fontana", "Mburucuyá", "Mercedes", "Merlo", "Metán", "Minas", "Mitre", "Molinos", "Monte", "Monte Caseros", "Monte Hermoso", "Montecarlo", "Monteros", "Moreno", "Morón", "Mártires", "Navarro", "Necochea", "Nogoyá", "Nueve de Julio", "O'Higgins", "Oberá", "Ojo de Agua", "Olavarría", "Orán", "Paclín", "Palpalá", "Paraná", "Paso de Indios", "Paso de los Libres", "Patagones", "Patiño", "Pehuajó", "Pehuenches", "Pellegrini", "Pergamino", "Pichi Mahuida", "Picunches", "Picún Leufú", "Pila", "Pilar", "Pilcaniyeu", "Pilcomayo", "Pinamar", "Pirané", "Pocho", "Pocito", "Pomán", "Presidencia de la Plaza", "Presidente Perón", "Presidente Roque Sáenz Peña", "Puan", "Puelén", "Punilla", "Punta Indio", "Quebrachos", "Quemú Quemú", "Quilmes", "Quitilipi", "Ramallo", "Ramón Lista", "Rancul", "Rauch", "Rawson", "Realicó", "Rinconada", "Rivadavia", "Robles", "Rojas", "Roque Pérez", "Rosario", "Rosario de la Frontera", "Rosario de Lerma", "Rosario Vera Peñaloza", "Río Chico", "Río Grande", "Río Primero", "Río Segundo", "Río Senguer", "Saavedra", "Saladas", "Saladillo", "Salavina", "Salliqueló", "Salto", "San Alberto", "San Andrés de Giles", "San Antonio", "San Antonio de Areco", "San Blas de los Sauces", "San Carlos", "San Cayetano", "San Cosme", "San Cristóbal", "San Fernando", "San Ignacio", "San Isidro", "San Javier", "San Jerónimo", "San Justo", "San Lorenzo", "San Luis del Palmar", "San Martín", "San Miguel", "San Nicolás", "San Pedro", "San Rafael", "San Roque", "San Salvador", "San Vicente", "Sanagasta", "Santa Bárbara", "Santa Catalina", "Santa Lucía", "Santa María", "Santa Rosa", "Santa Victoria", "Santo Tomé", "Sarmiento", "Sauce", "Silípica", "Simoca", "Sobremonte", "Suipacha", "Susques", "Tafí del Valle", "Tafí Viejo", "Tala", "Tandil", "Tapalqué", "Tapenagá", "Tehuelches", "Telsen", "Tercero Arriba", "Tigre", "Tilcara", "Tinogasta", "Toay", "Tordillo", "Tornquist", "Totoral", "Trancas", "Trenel", "Trenque Lauquen", "Tres Arroyos", "Tres de Febrero", "Tres Lomas", "Tulumba", "Tumbaya", "Tunuyán", "Tupungato", "Ullum", "Unión", "Uruguay", "Ushuaia", "Utracan", "Valcheta", "Valle Fértil", "Valle Viejo", "Veinticinco de Mayo", "Vera", "Vicente López", "Victoria", "Villa Gesell", "Villaguay", "Villarino", "Vinchina", "Yavi", "Yerba Buena", "Zapala", "Zonda", "Zárate", "Ñorquinco", "Ñorquín"];
+
+function _iglesiaCiudadFiltradas() {
+  const q = document.getElementById('search-iglesia-ciudad').value.trim();
+  const ql = _sinTildes(q);
+  const filtradas = q ? OPCIONES_IGLESIA_CIUDAD.filter(o => _sinTildes(o).includes(ql)) : OPCIONES_IGLESIA_CIUDAD;
+  if (q && filtradas.length === 0) {
+    return [{ html: '&#x270F;&#xFE0F; Usar "<strong>' + q + '</strong>" como municipio', valor: q }];
+  }
+  if (q && filtradas.length > 0 && !filtradas.some(o => _sinTildes(o) === ql)) {
+    return [...filtradas.slice(0, 50), { html: '&#x270F;&#xFE0F; Usar "<strong>' + q + '</strong>" como municipio', valor: q }];
+  }
+  return filtradas.slice(0, 50);
+}
+
+function abrirDropdownIglesiaCiudad() {
+  const si = document.getElementById('search-iglesia-ciudad');
+  abrirPortal(si, _iglesiaCiudadFiltradas, (op) => seleccionarIglesiaCiudad(op));
+}
+
+function filtrarIglesiaCiudad() {
+  if (!_portal.anchor || _portal.anchor.id !== 'search-iglesia-ciudad') {
+    abrirPortal(document.getElementById('search-iglesia-ciudad'), _iglesiaCiudadFiltradas, (op) => seleccionarIglesiaCiudad(op));
+  } else {
+    refrescarPortal();
+  }
+  // Guardar en tiempo real lo que escribe
+  const q = document.getElementById('search-iglesia-ciudad').value.trim();
+  document.getElementById('iglesia-ciudad').value = q;
+  updateSteps();
+}
+
+function seleccionarIglesiaCiudad(op) {
+  document.getElementById('search-iglesia-ciudad').value = op;
+  document.getElementById('iglesia-ciudad').value = op;
+  cerrarTodosLosDropdowns();
+  updateSteps();
+}
+
+function keyNavIglesiaCiudad(e) { _portalKeyNav(e); }
+
+document.addEventListener('click', function(e) {
+  const wrap = document.getElementById('wrap-iglesia-ciudad');
+  if (wrap && !wrap.contains(e.target)) {
+    const q = document.getElementById('search-iglesia-ciudad').value.trim();
+    if (q) document.getElementById('iglesia-ciudad').value = q;
+  }
+});
+// ────────────────────────────────────────────────────────────────────────────
 // ── Scroll-reveal animations ─────────────────────────────────────────────────
 (function() {
   // Add reveal class to fields and section titles
