@@ -701,22 +701,21 @@
     position: fixed;
     left: 0;
     right: 0;
-    bottom: 0;          /* JS lo sobreescribe via Visual Viewport API */
-    top: auto;
+    top: 0;
+    bottom: 0;          /* pantalla completa: NO se reposiciona con el teclado */
     width: 100%;
-    max-height: 75vh;   /* JS lo sobreescribe; solo fallback inicial */
-    height: auto;
-    border-radius: 22px 22px 0 0;
+    height: 100%;
+    max-height: none;
+    border-radius: 0;
     border: none;
-    border-top: 1.5px solid var(--border);
-    box-shadow: 0 -8px 40px rgba(0,0,0,0.25);
+    box-shadow: none;
     display: flex;
     flex-direction: column;
     overflow: hidden;
     animation: sheetUp 0.22s cubic-bezier(.4,0,.2,1) both;
     padding: 0;
+    padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
-    will-change: transform, max-height;
   }
   .sheet-head {
     flex: 0 0 auto;
@@ -1918,6 +1917,8 @@ function cerrarTodosLosDropdowns() {
     portal.innerHTML = '';
     portal.style.cssText = '';   // limpiar estilos de posicionamiento de escritorio
   }
+  // Devolver el campo a su estado normal (quitamos el readOnly de celular)
+  if (_portal.anchor) { try { _portal.anchor.readOnly = false; } catch (e) {} }
   _portal = { anchor: null, render: null, onSelect: null };
   _portalSheetSearch = null;
   const cal = document.getElementById('cal-popup');
@@ -2075,10 +2076,6 @@ function _pintarPortalSheet(items) {
 
     lista = document.createElement('div');
     lista.className = 'sheet-list';
-    // Bloquear reposicionamiento de la sheet mientras el dedo toca la lista
-    lista.addEventListener('touchstart',  () => { _sheetTouchActive = true;  }, { passive: true });
-    lista.addEventListener('touchend',    () => { _sheetTouchActive = false; _reposicionarSheet(); }, { passive: true });
-    lista.addEventListener('touchcancel', () => { _sheetTouchActive = false; }, { passive: true });
 
     portal.appendChild(head);
     portal.appendChild(lista);
@@ -2086,19 +2083,13 @@ function _pintarPortalSheet(items) {
 
     portal.classList.add('open');
     _abrirBackdrop();
-    // Aplicar posición correcta inmediatamente basándose en el viewport visual actual
-    _reposicionarSheet();
 
-    // Pasar el foco al buscador de la hoja y soltar el del campo del form.
-    // El teclado del formulario se baja primero (blur), luego el buscador
-    // de la hoja lo levanta. Visual Viewport API ajusta la sheet en cada cambio.
-    setTimeout(() => {
-      try { _portal.anchor && _portal.anchor.blur(); } catch (e) {}
-    }, 0);
-    setTimeout(() => {
-      try { search.focus(); } catch (e) {}
-      _reposicionarSheet();
-    }, 150);
+    // La hoja ocupa toda la pantalla y el buscador queda fijo arriba, así que
+    // el teclado solo tapa la parte de abajo de la lista. No hace falta
+    // reposicionar nada: soltamos el teclado del campo del form y pasamos el
+    // foco al buscador de la hoja en un solo paso (sin parpadeo ni saltos).
+    try { _portal.anchor && _portal.anchor.blur(); } catch (e) {}
+    setTimeout(() => { try { search.focus(); } catch (e) {} }, 60);
   }
 
   // (re)pintar la lista de opciones
@@ -2119,6 +2110,11 @@ function abrirPortal(anchorEl, renderFn, onSelect) {
   _portal.anchor = anchorEl;
   _portal.render = renderFn;
   _portal.onSelect = onSelect;
+  // En celular, el campo NO debe abrir su propio teclado: solo abre la hoja.
+  // El único teclado que aparece es el del buscador de la hoja.
+  if (_esMobile() && anchorEl) {
+    try { anchorEl.readOnly = true; anchorEl.blur(); } catch (e) {}
+  }
   _pintarPortal();
 }
 
@@ -2139,33 +2135,14 @@ document.addEventListener('mousedown', e => {
 window.addEventListener('scroll', () => { if (_portal.anchor) _posicionarPortal(); }, { passive: true });
 window.addEventListener('resize', () => { if (_portal.anchor) _posicionarPortal(); }, { passive: true });
 
-// Visual Viewport API: mantiene la sheet anclada al borde inferior
-// del viewport visible aunque el teclado suba o baje.
-// Se bloquea mientras hay un touch activo para que el reposicionamiento
-// no mueva la sheet justo cuando el usuario está tocando una opción.
+// Visual Viewport API: ya NO reposicionamos la hoja.
+// La hoja ahora ocupa toda la pantalla con el buscador fijo arriba, así que
+// el teclado nunca la tapa ni la mueve. Esto evita los saltos y el efecto
+// "espejado" que aparecía al abrir/cerrar el teclado.
 var _sheetTouchActive = false;
 var _sheetRAF = null;
 
-function _reposicionarSheet() {
-  if (_sheetTouchActive) return;   // no mover mientras hay toque en curso
-  var portal = _portalEl();
-  if (!portal || !portal.classList.contains('portal-sheet')) return;
-  var vv = window.visualViewport;
-  if (!vv) return;
-  if (_sheetRAF) cancelAnimationFrame(_sheetRAF);
-  _sheetRAF = requestAnimationFrame(function() {
-    if (_sheetTouchActive) return;
-    var vvBottom = vv.offsetTop + vv.height;
-    var layoutH  = document.documentElement.clientHeight;
-    var bottomOffset = layoutH - vvBottom;
-    portal.style.bottom    = bottomOffset + 'px';
-    portal.style.maxHeight = Math.floor(vv.height * 0.75) + 'px';
-  });
-}
-if (window.visualViewport) {
-  window.visualViewport.addEventListener('resize', _reposicionarSheet, { passive: true });
-  window.visualViewport.addEventListener('scroll', _reposicionarSheet, { passive: true });
-}
+function _reposicionarSheet() { /* sin efecto: la hoja es de pantalla completa */ }
 
 // Los listeners touchstart/touchend sobre la lista se agregan en _pintarPortalSheet
 // ─────────────────────────────────────────────────────────────────────────────
