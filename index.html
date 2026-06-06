@@ -1943,19 +1943,53 @@ function _posicionarPortal() {
   }
 }
 
-// Crea un item de opción. La selección es por 'click', que en celular SOLO
-// se dispara con un toque real (no cuando arrastrás para hacer scroll).
+// Crea un item de opción con selección inmediata en mobile (touchend)
+// y fallback a click en desktop.
 function _crearOpcion(it) {
   const div = document.createElement('div');
   div.className = 'search-option';
   if (typeof it === 'object') { div.innerHTML = it.html; div._valor = it.valor; }
   else { div.textContent = it; div._valor = it; }
-  div.addEventListener('click', (e) => {
-    e.preventDefault(); e.stopPropagation();
+
+  function _seleccionar(e) {
+    e.preventDefault();
+    e.stopPropagation();
     const v = div._valor;
-    if (_portal.onSelect) _portal.onSelect(v);
+    // Guardar onSelect ANTES de cerrar (cerrar limpia _portal)
+    const fn = _portal.onSelect;
     cerrarTodosLosDropdowns();
-  });
+    if (fn) fn(v);
+  }
+
+  if ('ontouchstart' in window) {
+    // En mobile: responder en touchend para no interferir con el scroll,
+    // pero solo si el dedo no se movió más de 8px (no fue un scroll).
+    let _tx = 0, _ty = 0, _moved = false;
+    div.addEventListener('touchstart', (e) => {
+      _tx = e.touches[0].clientX;
+      _ty = e.touches[0].clientY;
+      _moved = false;
+      div.classList.add('highlighted');
+    }, { passive: true });
+    div.addEventListener('touchmove', (e) => {
+      if (Math.abs(e.touches[0].clientX - _tx) > 8 ||
+          Math.abs(e.touches[0].clientY - _ty) > 8) {
+        _moved = true;
+        div.classList.remove('highlighted');
+      }
+    }, { passive: true });
+    div.addEventListener('touchend', (e) => {
+      div.classList.remove('highlighted');
+      if (!_moved) _seleccionar(e);
+    });
+    div.addEventListener('touchcancel', () => {
+      _moved = true;
+      div.classList.remove('highlighted');
+    }, { passive: true });
+  } else {
+    div.addEventListener('click', _seleccionar);
+  }
+
   return div;
 }
 
@@ -2041,6 +2075,10 @@ function _pintarPortalSheet(items) {
 
     lista = document.createElement('div');
     lista.className = 'sheet-list';
+    // Bloquear reposicionamiento de la sheet mientras el dedo toca la lista
+    lista.addEventListener('touchstart',  () => { _sheetTouchActive = true;  }, { passive: true });
+    lista.addEventListener('touchend',    () => { _sheetTouchActive = false; _reposicionarSheet(); }, { passive: true });
+    lista.addEventListener('touchcancel', () => { _sheetTouchActive = false; }, { passive: true });
 
     portal.appendChild(head);
     portal.appendChild(lista);
@@ -2102,24 +2140,34 @@ window.addEventListener('scroll', () => { if (_portal.anchor) _posicionarPortal(
 window.addEventListener('resize', () => { if (_portal.anchor) _posicionarPortal(); }, { passive: true });
 
 // Visual Viewport API: mantiene la sheet anclada al borde inferior
-// del viewport visible aunque el teclado suba o baje
+// del viewport visible aunque el teclado suba o baje.
+// Se bloquea mientras hay un touch activo para que el reposicionamiento
+// no mueva la sheet justo cuando el usuario está tocando una opción.
+var _sheetTouchActive = false;
+var _sheetRAF = null;
+
 function _reposicionarSheet() {
+  if (_sheetTouchActive) return;   // no mover mientras hay toque en curso
   var portal = _portalEl();
   if (!portal || !portal.classList.contains('portal-sheet')) return;
   var vv = window.visualViewport;
   if (!vv) return;
-  // vv.height = alto del area visible real (sin teclado)
-  // vv.offsetTop = desplazamiento del viewport visual dentro del layout viewport
-  var vvBottom = vv.offsetTop + vv.height;
-  var layoutH  = document.documentElement.clientHeight;
-  var bottomOffset = layoutH - vvBottom;
-  portal.style.bottom    = bottomOffset + 'px';
-  portal.style.maxHeight = Math.floor(vv.height * 0.75) + 'px';
+  if (_sheetRAF) cancelAnimationFrame(_sheetRAF);
+  _sheetRAF = requestAnimationFrame(function() {
+    if (_sheetTouchActive) return;
+    var vvBottom = vv.offsetTop + vv.height;
+    var layoutH  = document.documentElement.clientHeight;
+    var bottomOffset = layoutH - vvBottom;
+    portal.style.bottom    = bottomOffset + 'px';
+    portal.style.maxHeight = Math.floor(vv.height * 0.75) + 'px';
+  });
 }
 if (window.visualViewport) {
   window.visualViewport.addEventListener('resize', _reposicionarSheet, { passive: true });
   window.visualViewport.addEventListener('scroll', _reposicionarSheet, { passive: true });
 }
+
+// Los listeners touchstart/touchend sobre la lista se agregan en _pintarPortalSheet
 // ─────────────────────────────────────────────────────────────────────────────
 
 function abrirDropdown(campo) {
