@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
 <title>Winter Break 2026 - Formulario de Inscripción</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%23FFF8F0'/><text x='50' y='78' font-family='Georgia,serif' font-weight='900' font-size='52' text-anchor='middle' fill='%23F4833A'>WB</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,900&display=swap" rel="stylesheet">
@@ -703,7 +703,11 @@
     bottom: 0;
     top: auto;
     width: 100%;
-    max-height: 85vh;
+    /* dvh = dynamic viewport height: excluye el teclado virtual en browsers modernos.
+       Fallback a 75vh para browsers que no soportan dvh. */
+    max-height: 75dvh;
+    max-height: 75vh; /* fallback primero */
+    max-height: 75dvh; /* override en browsers modernos */
     height: auto;
     border-radius: 22px 22px 0 0;
     border: none;
@@ -714,6 +718,10 @@
     overflow: hidden;
     animation: sheetUp 0.22s cubic-bezier(.4,0,.2,1) both;
     padding: 0;
+    /* Respetar el área segura del dispositivo */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    /* Usar el viewport visual (sin el teclado) en lugar del layout viewport */
+    bottom: env(keyboard-inset-height, 0px);
   }
   .sheet-head {
     flex: 0 0 auto;
@@ -762,7 +770,7 @@
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
-    padding-bottom: env(safe-area-inset-bottom, 0);
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
   }
   #portal-dropdown.portal-sheet .search-option {
     padding: 1rem 1.1rem;          /* objetivos de toque grandes */
@@ -795,10 +803,12 @@
 
     /* Calendario como ventana centrada */
     .cal-popup.open {
+      position: fixed;
       top: 50% !important;
       left: 50% !important;
       bottom: auto !important;
-      transform: translate(-50%, -50%);
+      right: auto !important;
+      transform: translate(-50%, -50%) !important;
       width: min(330px, 92vw);
       max-height: 88vh;
       overflow-y: auto;
@@ -911,7 +921,7 @@
         </label>
         <div class="date-wrap">
           <input type="text" id="fecha-nac" placeholder="DD/MM/AAAA" maxlength="10"
-            oninput="formatearFecha(this); updateSteps(); calcularEdad()" onfocus="abrirCal()" autocomplete="off" />
+            oninput="formatearFecha(this); updateSteps(); calcularEdad()" onfocus="if(_esMobile()){this.blur();abrirCal();}else{abrirCal();}" autocomplete="off" />
           <span class="date-icon" onclick="toggleCal()">📅</span>
           <div class="cal-popup" id="cal-popup">
             <!-- Cápsulas selección actual -->
@@ -2046,7 +2056,13 @@ function _pintarPortalSheet(items) {
 
     // Pasar el foco al buscador de la hoja y soltar el del campo del form
     // (así el teclado queda en la hoja y no descoloca la pantalla de atrás)
-    setTimeout(() => { try { _portal.anchor && _portal.anchor.blur(); } catch (e) {} search.focus(); }, 30);
+    // Primero blur del anchor para bajar el teclado existente, luego foco al search
+    setTimeout(() => {
+      try { _portal.anchor && _portal.anchor.blur(); } catch (e) {}
+    }, 0);
+    setTimeout(() => {
+      try { search.focus(); } catch (e) {}
+    }, 150);
   }
 
   // (re)pintar la lista de opciones
@@ -2313,11 +2329,21 @@ function abrirCal() {
   if (calYear === null) irStep('anio');
   else if (calMonth === null) irStep('mes');
   else irStep('dia');
-  popup.classList.add('open');
-  posicionarCal();
+
   if (_esMobile()) {
-    setTimeout(() => { try { document.getElementById('fecha-nac').blur(); } catch (e) {} }, 0);
+    // En mobile: primero cerrar el teclado, luego mostrar el popup
+    // para que el centrado sea sobre el viewport visual real
+    try { document.activeElement && document.activeElement.blur(); } catch(e) {}
+    try { document.getElementById('fecha-nac').blur(); } catch(e) {}
     _abrirBackdrop();
+    // Pequeño delay para que el teclado termine de cerrarse antes de mostrar
+    setTimeout(() => {
+      popup.classList.add('open');
+      posicionarCal();
+    }, 80);
+  } else {
+    popup.classList.add('open');
+    posicionarCal();
   }
 }
 
@@ -2326,9 +2352,12 @@ function posicionarCal() {
   const anchor = document.getElementById('fecha-nac');
   if (!popup.classList.contains('open')) return;
   if (_esMobile()) {                 // en celular lo centra el CSS
-    popup.style.left = '';
-    popup.style.top = '';
+    popup.style.left   = '';
+    popup.style.top    = '';
     popup.style.bottom = '';
+    popup.style.right  = '';
+    popup.style.transform = '';
+    popup.style.width  = '';
     return;
   }
   const rect = anchor.getBoundingClientRect();
@@ -2351,8 +2380,13 @@ function toggleCal() {
   if (p.classList.contains('open')) {
     cerrarCal();
   } else {
+    if (_esMobile()) {
+      // Blur primero para bajar el teclado, luego abrirCal ya maneja el timing
+      try { document.getElementById('fecha-nac').blur(); } catch(e) {}
+    } else {
+      document.getElementById('fecha-nac').focus();
+    }
     abrirCal();
-    if (!_esMobile()) document.getElementById('fecha-nac').focus();
   }
 }
 function cerrarCal() {
