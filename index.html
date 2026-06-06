@@ -750,13 +750,15 @@
       <div class="two-col">
         <div class="field" id="field-nombre">
           <label for="nombre">Nombre</label>
-          <input type="text" id="nombre" placeholder="Ej: María" oninput="updateSteps()" />
+          <input type="text" id="nombre" placeholder="Ej: María" oninput="validarSoloLetras('nombre'); updateSteps()" />
           <p class="error-msg" id="err-nombre">Obligatorio</p>
+          <p class="error-msg" id="err-nombre-numeros">Solo se permiten letras</p>
         </div>
         <div class="field" id="field-apellido">
           <label for="apellido">Apellido</label>
-          <input type="text" id="apellido" placeholder="Ej: García" oninput="updateSteps()" />
+          <input type="text" id="apellido" placeholder="Ej: García" oninput="validarSoloLetras('apellido'); updateSteps()" />
           <p class="error-msg" id="err-apellido">Obligatorio</p>
+          <p class="error-msg" id="err-apellido-numeros">Solo se permiten letras</p>
         </div>
       </div>
 
@@ -808,8 +810,9 @@
 
       <div class="field" id="field-dni">
         <label for="dni">DNI</label>
-        <input type="text" id="dni" placeholder="Ej: 42573453" maxlength="9" oninput="updateSteps()" />
+        <input type="text" id="dni" placeholder="Ej: 42573453" maxlength="10" inputmode="numeric" oninput="validarSoloNumeros('dni'); updateSteps()" />
         <p class="error-msg" id="err-dni">Obligatorio</p>
+        <p class="error-msg" id="err-dni-letras">Solo se permiten números</p>
       </div>
 
       <div class="section-title">📞 Datos de contacto</div>
@@ -839,8 +842,9 @@
 
       <div class="field" id="field-nombre-emergencia">
         <label>Nombre del contacto de emergencia</label>
-        <input type="text" id="nombre-emergencia" placeholder="Nombre y apellido" oninput="updateSteps()" />
+        <input type="text" id="nombre-emergencia" placeholder="Nombre y apellido" oninput="validarSoloLetras('nombre-emergencia'); updateSteps()" />
         <p class="error-msg" id="err-nombre-emergencia">Obligatorio</p>
+        <p class="error-msg" id="err-nombre-emergencia-numeros">Solo se permiten letras</p>
       </div>
 
       <div class="field" id="field-relacion-emergencia">
@@ -948,7 +952,7 @@
       <!-- Cobertura "Otro" detalle -->
       <div class="field" id="field-cobertura-otro" style="display:none;">
         <label for="cobertura-otro-texto">Por favor, indicá cuál *</label>
-        <input type="text" id="cobertura-otro-texto" placeholder="Escribí tu cobertura médica..." oninput="updateSteps(); document.getElementById('cobertura-medica').value = this.value.trim();" />
+        <input type="text" id="cobertura-otro-texto" placeholder="Escribí tu cobertura médica..." maxlength="30" oninput="updateSteps(); document.getElementById('cobertura-medica').value = this.value.trim();" />
         <p class="error-msg" id="err-cobertura-otro">Obligatorio</p>
       </div>
 
@@ -3073,6 +3077,41 @@ document.addEventListener('click', function(e) {
   }
 });
 // ────────────────────────────────────────────────────────────────────────────
+// ── Validaciones de formato en tiempo real ──────────────────────────────────
+function validarSoloNumeros(id) {
+  const inp = document.getElementById(id);
+  const err = document.getElementById('err-' + id + '-letras');
+  const tieneLetras = /[^0-9]/.test(inp.value);
+  if (tieneLetras) {
+    // Eliminar letras silenciosamente
+    inp.value = inp.value.replace(/[^0-9]/g, '');
+    // Mostrar aviso solo si intentó escribir una letra
+    if (err) { err.style.display = 'block'; document.getElementById('field-' + id).classList.add('field-error'); }
+    setTimeout(() => {
+      if (err) err.style.display = 'none';
+      if (!inp.value === '') document.getElementById('field-' + id).classList.remove('field-error');
+    }, 2000);
+  }
+}
+
+function validarSoloLetras(id) {
+  const inp = document.getElementById(id);
+  const errId = 'err-' + id + '-numeros';
+  const err = document.getElementById(errId);
+  const tieneNumeros = /[0-9]/.test(inp.value);
+  if (tieneNumeros) {
+    // Eliminar números silenciosamente
+    inp.value = inp.value.replace(/[0-9]/g, '');
+    // Mostrar aviso solo si intentó escribir un número
+    if (err) { err.style.display = 'block'; document.getElementById('field-' + id).classList.add('field-error'); }
+    setTimeout(() => {
+      if (err) err.style.display = 'none';
+      document.getElementById('field-' + id).classList.remove('field-error');
+    }, 2000);
+  }
+}
+// ────────────────────────────────────────────────────────────────────────────
+
 // ── Scroll-reveal animations ─────────────────────────────────────────────────
 (function() {
   // Add reveal class to fields and section titles
