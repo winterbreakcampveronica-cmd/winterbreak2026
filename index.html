@@ -686,7 +686,8 @@
     backdrop-filter: blur(2px);
   }
   #overlay-backdrop.open { display: block; }
-  body.sheet-abierta { overflow: hidden; }
+  body.sheet-abierta { overflow: hidden; touch-action: none; }
+  body.sheet-abierta > *:not(#portal-dropdown):not(#overlay-backdrop) { pointer-events: none; }
 
   @keyframes sheetUp {
     from { transform: translateY(100%); }
@@ -700,14 +701,10 @@
     position: fixed;
     left: 0;
     right: 0;
-    bottom: 0;
+    bottom: 0;          /* JS lo sobreescribe via Visual Viewport API */
     top: auto;
     width: 100%;
-    /* dvh = dynamic viewport height: excluye el teclado virtual en browsers modernos.
-       Fallback a 75vh para browsers que no soportan dvh. */
-    max-height: 75dvh;
-    max-height: 75vh; /* fallback primero */
-    max-height: 75dvh; /* override en browsers modernos */
+    max-height: 75vh;   /* JS lo sobreescribe; solo fallback inicial */
     height: auto;
     border-radius: 22px 22px 0 0;
     border: none;
@@ -718,10 +715,8 @@
     overflow: hidden;
     animation: sheetUp 0.22s cubic-bezier(.4,0,.2,1) both;
     padding: 0;
-    /* Respetar el área segura del dispositivo */
     padding-bottom: env(safe-area-inset-bottom, 0px);
-    /* Usar el viewport visual (sin el teclado) en lugar del layout viewport */
-    bottom: env(keyboard-inset-height, 0px);
+    will-change: transform, max-height;
   }
   .sheet-head {
     flex: 0 0 auto;
@@ -2053,15 +2048,18 @@ function _pintarPortalSheet(items) {
 
     portal.classList.add('open');
     _abrirBackdrop();
+    // Aplicar posición correcta inmediatamente basándose en el viewport visual actual
+    _reposicionarSheet();
 
-    // Pasar el foco al buscador de la hoja y soltar el del campo del form
-    // (así el teclado queda en la hoja y no descoloca la pantalla de atrás)
-    // Primero blur del anchor para bajar el teclado existente, luego foco al search
+    // Pasar el foco al buscador de la hoja y soltar el del campo del form.
+    // El teclado del formulario se baja primero (blur), luego el buscador
+    // de la hoja lo levanta. Visual Viewport API ajusta la sheet en cada cambio.
     setTimeout(() => {
       try { _portal.anchor && _portal.anchor.blur(); } catch (e) {}
     }, 0);
     setTimeout(() => {
       try { search.focus(); } catch (e) {}
+      _reposicionarSheet();
     }, 150);
   }
 
@@ -2102,6 +2100,26 @@ document.addEventListener('mousedown', e => {
 
 window.addEventListener('scroll', () => { if (_portal.anchor) _posicionarPortal(); }, { passive: true });
 window.addEventListener('resize', () => { if (_portal.anchor) _posicionarPortal(); }, { passive: true });
+
+// Visual Viewport API: mantiene la sheet anclada al borde inferior
+// del viewport visible aunque el teclado suba o baje
+function _reposicionarSheet() {
+  var portal = _portalEl();
+  if (!portal || !portal.classList.contains('portal-sheet')) return;
+  var vv = window.visualViewport;
+  if (!vv) return;
+  // vv.height = alto del area visible real (sin teclado)
+  // vv.offsetTop = desplazamiento del viewport visual dentro del layout viewport
+  var vvBottom = vv.offsetTop + vv.height;
+  var layoutH  = document.documentElement.clientHeight;
+  var bottomOffset = layoutH - vvBottom;
+  portal.style.bottom    = bottomOffset + 'px';
+  portal.style.maxHeight = Math.floor(vv.height * 0.75) + 'px';
+}
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', _reposicionarSheet, { passive: true });
+  window.visualViewport.addEventListener('scroll', _reposicionarSheet, { passive: true });
+}
 // ─────────────────────────────────────────────────────────────────────────────
 
 function abrirDropdown(campo) {
