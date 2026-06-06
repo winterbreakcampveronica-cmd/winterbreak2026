@@ -951,6 +951,60 @@
         <p class="error-msg" id="err-dni-letras">Solo se permiten números</p>
       </div>
 
+      <!-- ¿Primera vez en la campa WB? -->
+      <style>
+        .wb-firsttime { display:flex; flex-direction:column; gap:0.5rem; margin-top:0.35rem; }
+        .wb-opt {
+          display:flex; align-items:center; gap:0.6rem;
+          padding:0.62rem 0.85rem;
+          border:1.5px solid var(--border);
+          border-radius:12px;
+          background:var(--input-bg);
+          cursor:pointer;
+          transition:border-color .18s ease, background .18s ease, box-shadow .18s ease, transform .12s ease;
+        }
+        .wb-opt:hover { border-color:var(--accent2); background:#FFFBF6; }
+        .wb-opt:active { transform:scale(0.99); }
+        .wb-opt input { position:absolute; opacity:0; width:0; height:0; pointer-events:none; }
+        .wb-opt .wb-emoji { font-size:1.05rem; line-height:1; flex-shrink:0; }
+        .wb-opt .wb-txt {
+          font-size:0.88rem; font-weight:700; color:var(--text);
+          line-height:1.25; text-transform:none; letter-spacing:0;
+        }
+        .wb-opt .wb-check {
+          margin-left:auto; width:17px; height:17px; flex-shrink:0;
+          border-radius:50%; border:1.5px solid var(--border);
+          display:flex; align-items:center; justify-content:center;
+          color:#fff; font-size:0.62rem; font-weight:800;
+          transition:background .18s ease, border-color .18s ease;
+        }
+        .wb-opt.selected {
+          border-color:var(--accent);
+          background:#FFF1E4;
+          box-shadow:0 3px 10px rgba(244,131,58,0.13);
+        }
+        .wb-opt.selected .wb-check { background:var(--accent); border-color:var(--accent); }
+        .wb-opt.selected .wb-check::after { content:'\2713'; }
+      </style>
+      <div class="field" id="field-primera-vez">
+        <label>¿Es tu primera vez en el campa Winter Break? *</label>
+        <div class="wb-firsttime">
+          <label class="wb-opt">
+            <input type="radio" name="primera-vez" value="Sí, primera vez" onchange="seleccionarPrimeraVez(this)">
+            <span class="wb-emoji">🔥</span>
+            <span class="wb-txt">¡Sí! Es mi primer campa WB</span>
+            <span class="wb-check"></span>
+          </label>
+          <label class="wb-opt">
+            <input type="radio" name="primera-vez" value="Vuelvo por más (ya estuve antes)" onchange="seleccionarPrimeraVez(this)">
+            <span class="wb-emoji">❤️</span>
+            <span class="wb-txt">¡Vuelvo por más!</span>
+            <span class="wb-check"></span>
+          </label>
+        </div>
+        <p class="error-msg" id="err-primera-vez">Obligatorio</p>
+      </div>
+
       <div class="section-title">📞 Datos de contacto</div>
 
       <div class="field" id="field-email">
@@ -1049,7 +1103,7 @@
       <div class="field" id="field-localidad">
         <label id="label-localidad">Localidad / Ciudad / Barrio</label>
         <div class="search-wrap search-disabled" id="wrap-localidad">
-          <input type="text" id="search-localidad" placeholder="Primero elegí un partido..." autocomplete="off" disabled
+          <input type="text" id="search-localidad" placeholder="Primero elegí un municipio..." autocomplete="off" disabled
             oninput="filtrarOpciones('localidad')" onfocus="abrirDropdown('localidad')" onkeydown="keyNav(event,'localidad')" />
           <span class="search-arrow">▾</span>
           <div class="search-dropdown" id="drop-localidad"></div>
@@ -1201,7 +1255,7 @@
 
       <div class="field">
         <label for="iglesia-pastor">Pastor / Líder de tu iglesia</label>
-        <input type="text" id="iglesia-pastor" placeholder="Nombre del pastor o líder" oninput="updateSteps()" />
+        <input type="text" id="iglesia-pastor" placeholder="Nombre y apellido" oninput="updateSteps()" />
       </div>
 
       <hr class="divider">
@@ -1230,6 +1284,7 @@
         <div><span>Fecha de nacimiento</span><strong id="res-fecha"></strong></div>
         <div><span>Edad</span><strong id="res-edad"></strong></div>
         <div><span>DNI</span><strong id="res-dni"></strong></div>
+        <div><span>Primera vez en la campa</span><strong id="res-primera-vez"></strong></div>
         <div><span>Correo electrónico</span><strong id="res-email"></strong></div>
         <div><span>Celular personal</span><strong id="res-celular"></strong></div>
         <div><span>Celular de contacto de emergencia</span><strong id="res-telalt"></strong></div>
@@ -2519,7 +2574,7 @@ function seleccionar(campo, valor) {
     document.getElementById('municipio').value = '';
     document.getElementById('wrap-municipio').classList.remove('search-disabled');
     const sloc = document.getElementById('search-localidad');
-    sloc.value = ''; sloc.disabled = true; sloc.placeholder = 'Primero elegí ' + (valor === 'CABA' ? 'una comuna...' : 'un partido...');
+    sloc.value = ''; sloc.disabled = true; sloc.placeholder = 'Primero elegí ' + (valor === 'CABA' ? 'una comuna...' : 'un municipio...');
     document.getElementById('localidad').value = '';
     document.getElementById('wrap-localidad').classList.add('search-disabled');
     document.getElementById('hint-mun').textContent = opcionesMun.length + ' opciones disponibles';
@@ -2581,6 +2636,9 @@ function updateSteps() {
   limpiarErr('field-cobertura', 'err-cobertura', !!document.getElementById('cobertura-medica').value.trim());
   limpiarErr('field-afiliado',  'err-afiliado',  !!document.getElementById('num-afiliado').value.trim());
 
+  const pvSel = document.querySelector('input[name="primera-vez"]:checked');
+  limpiarErr('field-primera-vez', 'err-primera-vez', !!pvSel);
+
   document.getElementById('btn-enviar').disabled = false;
 }
 
@@ -2615,6 +2673,8 @@ function enviar() {
   marcarObligatorio('field-sexo',        'err-sexo',        !sexo);
   marcarObligatorio('field-fecha',       'err-fecha',       fecha.length !== 10);
   marcarObligatorio('field-dni',         'err-dni',         !document.getElementById('dni').value.trim());
+  const primeraVez = document.querySelector('input[name="primera-vez"]:checked')?.value;
+  marcarObligatorio('field-primera-vez', 'err-primera-vez', !primeraVez);
   marcarObligatorio('field-provincia',   'err-provincia',   !document.getElementById('provincia').value);
   marcarObligatorio('field-municipio',   'err-municipio',   !document.getElementById('municipio').value);
   marcarObligatorio('field-localidad',   'err-localidad',   !document.getElementById('localidad').value);
@@ -2767,6 +2827,7 @@ function enviar() {
   document.getElementById('res-fecha').textContent = fecha;
   document.getElementById('res-edad').textContent = edad || '—';
   document.getElementById('res-dni').textContent = document.getElementById('dni').value.trim();
+  document.getElementById('res-primera-vez').textContent = primeraVez || '—';
   document.getElementById('res-email').textContent = email;
   document.getElementById('res-celular').textContent = celular;
   document.getElementById('res-telalt').textContent = telalt || '—';
@@ -2819,6 +2880,7 @@ function enviar() {
     fechaNac:          fecha,
     edad:              edad,
     dni:               document.getElementById('dni').value.trim(),
+    primeraVezWB:      primeraVez || '',
     email:             email,
     celular:           celular,
     telAlt:            telalt,
@@ -2903,8 +2965,18 @@ function renderDropRelacion(lista) {
 }
 
 function _relacionFiltradas() {
-  const q = _sinTildes(document.getElementById('search-relacion').value.trim());
-  return q ? OPCIONES_RELACION.filter(o => _sinTildes(o).includes(q)) : OPCIONES_RELACION;
+  const q = document.getElementById('search-relacion').value.trim();
+  const ql = _sinTildes(q);
+  const filtradas = q ? OPCIONES_RELACION.filter(o => _sinTildes(o).includes(ql)) : OPCIONES_RELACION;
+  // Si escribió algo y no hay coincidencias, ofrecer lo que escribió como opción
+  if (q && filtradas.length === 0) {
+    return [{ html: '✏️ Usar "<strong>' + q + '</strong>" como relación personalizada', valor: q }];
+  }
+  // Si hay coincidencias pero ninguna es exacta, agregar también la opción de texto libre
+  if (q && filtradas.length > 0 && !filtradas.some(o => _sinTildes(o) === ql)) {
+    return [...filtradas, { html: '✏️ Usar "<strong>' + q + '</strong>" como relación personalizada', valor: q }];
+  }
+  return filtradas;
 }
 
 function abrirDropdownRelacion() {
@@ -3057,8 +3129,18 @@ function renderDropCobertura(lista) {
 }
 
 function _coberturaFiltradas() {
-  const q = document.getElementById('search-cobertura').value.trim().toLowerCase();
-  return q ? OPCIONES_COBERTURA.filter(o => o.toLowerCase().includes(q)) : OPCIONES_COBERTURA;
+  const q = document.getElementById('search-cobertura').value.trim();
+  const ql = q.toLowerCase();
+  const filtradas = q ? OPCIONES_COBERTURA.filter(o => o.toLowerCase().includes(ql)) : OPCIONES_COBERTURA;
+  // Si escribió algo y no hay coincidencias, ofrecer lo que escribió como opción
+  if (q && filtradas.length === 0) {
+    return [{ html: '✏️ Usar "<strong>' + q + '</strong>" como cobertura', valor: q }];
+  }
+  // Si hay coincidencias pero ninguna es exacta, agregar también la opción de texto libre
+  if (q && filtradas.length > 0 && !filtradas.some(o => o.toLowerCase() === ql)) {
+    return [...filtradas, { html: '✏️ Usar "<strong>' + q + '</strong>" como cobertura', valor: q }];
+  }
+  return filtradas;
 }
 
 function abrirDropdownCobertura() {
@@ -3324,6 +3406,13 @@ function toggleSaludDetalle(key) {
   updateSteps();
 }
 
+function seleccionarPrimeraVez(radio) {
+  document.querySelectorAll('#field-primera-vez .wb-opt').forEach(o => o.classList.remove('selected'));
+  const cont = radio.closest('.wb-opt');
+  if (cont) cont.classList.add('selected');
+  updateSteps();
+}
+
 function resetForm() {
   ['nombre','apellido','email','fecha-nac','dni','celular','tel-alt','nombre-emergencia','relacion-emergencia','calle','numero','iglesia-nombre','iglesia-ciudad','iglesia-pastor'].forEach(id => document.getElementById(id).value = '');
   const eb = document.getElementById('edad-badge'); if(eb){ eb.style.display='none'; eb.textContent=''; }
@@ -3334,13 +3423,15 @@ function resetForm() {
   document.getElementById('search-municipio').placeholder = 'Primero elegí una provincia...';
   document.getElementById('search-municipio').disabled = true;
   document.getElementById('wrap-municipio').classList.add('search-disabled');
-  document.getElementById('search-localidad').placeholder = 'Primero elegí un partido...';
+  document.getElementById('search-localidad').placeholder = 'Primero elegí un municipio...';
   document.getElementById('search-localidad').disabled = true;
   document.getElementById('wrap-localidad').classList.add('search-disabled');
   document.getElementById('hint-mun').textContent = '';
   document.getElementById('hint-loc').textContent = '';
   document.getElementById('field-email').classList.remove('field-error');
   document.querySelectorAll('input[type="radio"][name^="salud-"]').forEach(r => r.checked = false);
+  document.querySelectorAll('input[name="primera-vez"]').forEach(r => r.checked = false);
+  document.querySelectorAll('#field-primera-vez .wb-opt').forEach(o => o.classList.remove('selected'));
   ['salud-enf-detalle','salud-med-detalle','salud-dieta-detalle','salud-otro-detalle'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
   ['enf','med','dieta','otro'].forEach(key => { const el = document.getElementById(`field-salud-${key}-detalle`); if(el) el.style.display='none'; });
   const sd = document.getElementById('search-dieta'); if(sd){ sd.value=''; sd.placeholder='Buscar o escribir dieta/restricción...'; }
