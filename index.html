@@ -809,6 +809,32 @@
       z-index: 999995;
     }
   }
+
+  /* ── Botón S/N en campo Número ─────────────────────────────────────────── */
+  .numero-wrap { display: flex; gap: 6px; align-items: stretch; }
+  .numero-wrap input { flex: 1; min-width: 0; }
+  .btn-sn {
+    flex-shrink: 0;
+    padding: 0 0.95rem;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    background: var(--input-bg);
+    color: var(--text);
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.18s, border-color 0.18s, color 0.18s;
+    white-space: nowrap;
+  }
+  .btn-sn:hover { background: #EEF2FC; border-color: var(--accent2); }
+  .btn-sn.activo {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent-dark);
+  }
+  .numero-wrap input:disabled {
+    background-color: #F4F7FD; color: #9DB0C8; cursor: not-allowed; border-color: var(--border);
+  }
 </style>
 </head>
 <body>
@@ -1070,8 +1096,12 @@
         </div>
         <div class="field" id="field-numero">
           <label for="numero">Número</label>
-          <input type="text" id="numero" placeholder="Ej: 1234" maxlength="7" oninput="updateSteps()" />
+          <div class="numero-wrap">
+            <input type="text" id="numero" placeholder="Ej: 1234" maxlength="7" inputmode="numeric" oninput="validarNumeroDireccion(); updateSteps()" />
+            <button type="button" id="btn-sin-numero" class="btn-sn" onclick="toggleSinNumero()">S/N</button>
+          </div>
           <p class="error-msg" id="err-numero">Obligatorio</p>
+          <p class="error-msg" id="err-numero-letras">Solo números, sin guiones, espacios ni letras (o tocá S/N)</p>
         </div>
       </div>
 
@@ -3415,6 +3445,10 @@ function seleccionarPrimeraVez(radio) {
 
 function resetForm() {
   ['nombre','apellido','email','fecha-nac','dni','celular','tel-alt','nombre-emergencia','relacion-emergencia','calle','numero','iglesia-nombre','iglesia-ciudad','iglesia-pastor'].forEach(id => document.getElementById(id).value = '');
+  // Resetear botón S/N
+  const btnSN = document.getElementById('btn-sin-numero');
+  const inpNum = document.getElementById('numero');
+  if (btnSN && inpNum) { btnSN.classList.remove('activo'); inpNum.disabled = false; inpNum.placeholder = 'Ej: 1234'; }
   const eb = document.getElementById('edad-badge'); if(eb){ eb.style.display='none'; eb.textContent=''; }
   ['sexo'].forEach(id => document.getElementById(id).value = '');
   ['provincia','municipio','localidad'].forEach(id => document.getElementById(id).value = '');
@@ -3508,6 +3542,57 @@ document.addEventListener('click', function(e) {
 });
 // ────────────────────────────────────────────────────────────────────────────
 // ── Validaciones de formato en tiempo real ──────────────────────────────────
+// ── Validación y toggle S/N para campo Número de dirección ───────────────────
+function validarNumeroDireccion() {
+  const inp      = document.getElementById('numero');
+  const field    = document.getElementById('field-numero');
+  const errLetras = document.getElementById('err-numero-letras');
+  if (!inp || inp.disabled) return;
+
+  const raw = inp.value;
+  const soloDigitos = raw.replace(/\D/g, '');
+  const tieneInvalidos = raw !== soloDigitos;
+  if (tieneInvalidos) inp.value = soloDigitos;
+
+  errLetras.style.display = 'none';
+  field.classList.remove('field-error');
+
+  if (tieneInvalidos) {
+    errLetras.style.display = 'block';
+    field.classList.add('field-error');
+    setTimeout(() => {
+      errLetras.style.display = 'none';
+      if (inp.value !== '') field.classList.remove('field-error');
+    }, 2500);
+  }
+}
+
+function toggleSinNumero() {
+  const inp       = document.getElementById('numero');
+  const btn       = document.getElementById('btn-sin-numero');
+  const field     = document.getElementById('field-numero');
+  const errLetras = document.getElementById('err-numero-letras');
+  const errObl    = document.getElementById('err-numero');
+
+  const yaActivo = btn.classList.contains('activo');
+
+  if (yaActivo) {
+    btn.classList.remove('activo');
+    inp.disabled = false;
+    inp.value = '';
+    inp.placeholder = 'Ej: 1234';
+    inp.focus();
+  } else {
+    btn.classList.add('activo');
+    inp.value = 'S/N';
+    inp.disabled = true;
+    errLetras.style.display = 'none';
+    errObl.style.display = 'none';
+    field.classList.remove('field-error');
+  }
+  updateSteps();
+}
+
 function validarSoloNumeros(id) {
   const inp = document.getElementById(id);
   const err = document.getElementById('err-' + id + '-letras');
