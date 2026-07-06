@@ -2,14 +2,38 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-visual">
+<!-- Bloquea el "modo oscuro forzado" de Chrome Android / iOS: el form queda siempre en su paleta clara y no se invierte -->
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#FFF8F0">
+<!-- Evita que iOS convierta solo el DNI / CUIL / alias en links de teléfono azules que rompen las tarjetas -->
+<meta name="format-detection" content="telephone=no">
+<!-- Comportamiento tipo app si lo agregan a la pantalla de inicio -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Winter Break">
 <title>Winter Break 2026 - Formulario de Inscripción</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%23FFF8F0'/><text x='50' y='78' font-family='Georgia,serif' font-weight='900' font-size='52' text-anchor='middle' fill='%23F4833A'>WB</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,900&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+  /* Optimizaciones táctiles para celulares (saca el delay de 300ms, el flash gris
+     al tocar y suaviza el texto). No cambia el diseño, solo la sensación al tocar. */
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button, .btn, .btn-sn, select, input, label, [role="button"], a {
+    touch-action: manipulation;
+  }
+
   :root {
+    /* Refuerza el bloqueo del modo oscuro forzado también desde CSS (algunos
+       navegadores ignoran el <meta> y solo respetan esta propiedad) */
+    color-scheme: light;
     --bg: #FFF8F0;
     --card: #FFFFFF;
     --accent: #F4833A;
@@ -61,6 +85,9 @@
     font-family: 'Nunito', sans-serif;
     background: var(--bg);
     min-height: 100vh;
+    min-height: 100dvh; /* altura real del celu contemplando la barra del navegador (iOS/Android) */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -383,6 +410,23 @@
   }
   .btn-reset:hover { background: #FFF5EB; border-color: var(--accent); }
 
+  /* Sub-badge (separador visual dentro de sección) */
+  .sub-badge-row {
+    display: flex; align-items: center; gap: 10px; margin: 1.4rem 0 0.9rem;
+  }
+  .sub-badge-icon {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--accent3);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; font-size: 0.85rem;
+  }
+  .sub-badge-text { display: flex; flex-direction: column; gap: 1px; }
+  .sub-badge-title {
+    font-size: 0.72rem; font-weight: 800; color: var(--accent-dark);
+    letter-spacing: 0.08em; text-transform: uppercase; line-height: 1.2;
+  }
+  .sub-badge-sub { font-size: 0.72rem; color: var(--muted); line-height: 1.3; }
+
   /* Error state */
   .field-error input, .field-error select { border-color: #E06030 !important; box-shadow: 0 0 0 3px rgba(224,96,48,0.15) !important; }
   .error-msg { font-size: 0.75rem; color: #C04020; margin-top: 0.35rem; display: none; font-weight: 700; }
@@ -582,13 +626,12 @@
   }
 
   .camp-info {
-    background: rgba(255,255,255,0.72);
+    background: rgba(255,255,255,0.92);
     border: 1.5px solid var(--border);
     border-radius: 20px;
     padding: 1.3rem 1.4rem 1.1rem;
     margin: 0.4rem 0 1.2rem;
     text-align: left;
-    backdrop-filter: blur(4px);
     box-shadow: 0 4px 20px rgba(244,131,58,0.08);
     animation: heroRise 0.7s ease 0.4s both;
   }
@@ -680,10 +723,8 @@
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(61,32,16,0.45);
+    background: rgba(61,32,16,0.50);
     z-index: 999990;
-    -webkit-backdrop-filter: blur(2px);
-    backdrop-filter: blur(2px);
   }
   #overlay-backdrop.open { display: block; }
   body.sheet-abierta { overflow: hidden; touch-action: none; }
@@ -808,6 +849,49 @@
       overflow-y: auto;
       z-index: 999995;
     }
+
+    /* ── Aligerar para celulares viejos ──────────────────────────────────
+       Apagamos las animaciones que corren SIN PARAR (el resplandor que late
+       y el brillo que se desliza en el texto). El diseño se ve igual: el
+       resplandor y el degradé del texto quedan quietos en vez de moverse.
+       Esto es lo que más alivia a un celu viejo, porque deja de redibujar
+       la pantalla todo el tiempo. */
+    .slogan-flame-bg,
+    .slogan::before,
+    .slogan::after,
+    .slogan-eyebrow,
+    .slogan-title em,
+    .slogan-title .l1 {
+      animation: none !important;
+    }
+
+    /* Una sola sombra en la tarjeta (en vez de tres apiladas) = menos trabajo
+       al dibujar y al scrollear. Se ve prácticamente igual. */
+    .card {
+      box-shadow: 0 8px 30px rgba(244,131,58,0.12);
+    }
+
+    /* El fondo tenía TRES degradados grandes que se repintan cada vez que se
+       scrollea (una de las causas típicas de tironeo en celus viejos). En
+       pantalla chica dejamos uno solo, bien suave: se ve casi igual y el
+       celular pinta mucho menos. */
+    body {
+      background-image:
+        radial-gradient(ellipse 500px 400px at 0% 0%, rgba(247,180,106,0.20) 0%, transparent 62%);
+    }
+  }
+
+  /* ── Respetar "reducir movimiento" ───────────────────────────────────────
+     Si la persona activó esta opción en su celular, apagamos todas las
+     animaciones. Mejora la accesibilidad y, de paso, alivia al equipo. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+    .reveal, .reveal-section { opacity: 1 !important; transform: none !important; }
   }
 
   /* ── Botón S/N en campo Número ─────────────────────────────────────────── */
@@ -1048,6 +1132,14 @@
         <p class="error-msg" id="err-celular-corto">El celular debe tener al menos 6 números</p>
       </div>
 
+      <div class="sub-badge-row">
+        <div class="sub-badge-icon">👤</div>
+        <div class="sub-badge-text">
+          <div class="sub-badge-title">Contacto de emergencia</div>
+          <div class="sub-badge-sub">Por si necesitamos comunicarnos ante una urgencia</div>
+        </div>
+      </div>
+
       <div class="field" id="field-telalt">
         <label>Celular de contacto de emergencia</label>
         <input type="tel" id="tel-alt" placeholder="1141834573" oninput="this.value=this.value.replace(/\s/g,''); validarTelefono('telalt'); updateSteps()" maxlength="15" />
@@ -1086,7 +1178,7 @@
         <p class="error-msg" id="err-relacion-emergencia">Obligatorio</p>
       </div>
 
-      <div class="section-title">📍 Ubicación</div>
+      <div class="section-title">📍 Datos de ubicación</div>
 
       <div class="two-col">
         <div class="field" id="field-calle">
@@ -1097,7 +1189,7 @@
         <div class="field" id="field-numero">
           <label for="numero">Número</label>
           <div class="numero-wrap">
-            <input type="text" id="numero" placeholder="Ej: 1234" maxlength="7" inputmode="numeric" oninput="validarNumeroDireccion(); updateSteps()" />
+            <input type="text" id="numero" placeholder="Ej: 703" maxlength="7" inputmode="numeric" oninput="validarNumeroDireccion(); updateSteps()" />
             <button type="button" id="btn-sin-numero" class="btn-sn" onclick="toggleSinNumero()">S/N</button>
           </div>
           <p class="error-msg" id="err-numero">Obligatorio</p>
@@ -1145,27 +1237,46 @@
 
       <div class="section-title">🏥 Cuestiones de salud</div>
 
-      <!-- Cobertura médica y número de afiliado -->
-      <div class="two-col" style="align-items:start;">
-        <div class="field" id="field-cobertura">
-          <label>Cobertura médica *</label>
-          <div class="search-wrap" id="wrap-cobertura">
-            <input type="text" id="search-cobertura" placeholder="Buscar cobertura médica..."
-              autocomplete="off"
-              oninput="filtrarCobertura()"
-              onfocus="abrirDropdownCobertura()"
-              onclick="abrirDropdownCobertura()"
-              onkeydown="keyNavCobertura(event)" />
-            <span class="search-arrow">▾</span>
-            <div class="search-dropdown" id="drop-cobertura"></div>
-          </div>
-          <input type="hidden" id="cobertura-medica" />
-          <p class="error-msg" id="err-cobertura">Obligatorio</p>
+      <!-- Cobertura médica — cápsulas + panel desplegable -->
+      <div class="field" id="field-cobertura">
+        <label>Cobertura médica *</label>
+        <div style="display:flex;gap:8px;margin-top:0.1rem;flex-wrap:wrap;">
+          <button type="button" id="cap-sin" onclick="toggleCobertura('sin')"
+            style="display:inline-flex;align-items:center;gap:7px;padding:0.5rem 1.1rem;min-height:44px;border-radius:100px;border:1.5px solid var(--border);background:var(--input-bg);font-family:'Nunito',sans-serif;font-size:0.88rem;font-weight:700;color:var(--muted);cursor:pointer;transition:all 0.15s;">
+            <span id="dot-sin" style="width:13px;height:13px;border-radius:50%;border:2px solid currentColor;flex-shrink:0;display:flex;align-items:center;justify-content:center;"></span>
+            Sin cobertura
+          </button>
+          <button type="button" id="cap-con" onclick="toggleCobertura('con')"
+            style="display:inline-flex;align-items:center;gap:7px;padding:0.5rem 1.1rem;min-height:44px;border-radius:100px;border:1.5px solid var(--border);background:var(--input-bg);font-family:'Nunito',sans-serif;font-size:0.88rem;font-weight:700;color:var(--muted);cursor:pointer;transition:all 0.15s;">
+            <span id="dot-con" style="width:13px;height:13px;border-radius:50%;border:2px solid currentColor;flex-shrink:0;display:flex;align-items:center;justify-content:center;"></span>
+            Tengo cobertura
+          </button>
         </div>
-        <div class="field" id="field-afiliado">
-          <label for="num-afiliado">Número de afiliado *</label>
-          <input type="text" id="num-afiliado" placeholder="Ej: 123456789" oninput="updateSteps()" />
-          <p class="error-msg" id="err-afiliado">Obligatorio</p>
+        <input type="hidden" id="cobertura-medica" />
+        <p class="error-msg" id="err-cobertura">Obligatorio</p>
+      </div>
+
+      <!-- Panel obra social + afiliado (visible solo si tiene cobertura) -->
+      <div id="panel-tiene-cobertura" style="max-height:0;overflow:hidden;opacity:0;transition:max-height 0.28s ease,opacity 0.22s ease;">
+        <div class="two-col" style="align-items:start;">
+          <div class="field" id="field-cobertura-buscador">
+            <label>Obra social / prepaga *</label>
+            <div class="search-wrap" id="wrap-cobertura">
+              <input type="text" id="search-cobertura" placeholder="Buscar cobertura médica..."
+                autocomplete="off"
+                oninput="filtrarCobertura()"
+                onfocus="abrirDropdownCobertura()"
+                onclick="abrirDropdownCobertura()"
+                onkeydown="keyNavCobertura(event)" />
+              <span class="search-arrow">▾</span>
+              <div class="search-dropdown" id="drop-cobertura"></div>
+            </div>
+          </div>
+          <div class="field" id="field-afiliado">
+            <label for="num-afiliado">Número de afiliado *</label>
+            <input type="text" id="num-afiliado" placeholder="Ej: 123456789" oninput="updateSteps()" />
+            <p class="error-msg" id="err-afiliado">Obligatorio</p>
+          </div>
         </div>
       </div>
 
@@ -1176,45 +1287,7 @@
         <p class="error-msg" id="err-cobertura-otro">Obligatorio</p>
       </div>
 
-      <!-- Pregunta 1: Enfermedad / condición médica / alergia -->
-      <div class="field" id="field-salud-enf">
-        <label>¿Tenés alguna enfermedad, condición médica o alergia que debamos tener en cuenta? *</label>
-        <div style="display:flex;gap:0.75rem;margin-top:0.3rem;">
-          <label style="display:flex;align-items:center;gap:0.45rem;font-size:0.97rem;font-weight:700;color:var(--text);text-transform:none;letter-spacing:0;cursor:pointer;">
-            <input type="radio" name="salud-enf" value="Sí" onchange="toggleSaludDetalle('enf')" style="accent-color:var(--accent);width:18px;height:18px;cursor:pointer;"> Sí
-          </label>
-          <label style="display:flex;align-items:center;gap:0.45rem;font-size:0.97rem;font-weight:700;color:var(--text);text-transform:none;letter-spacing:0;cursor:pointer;">
-            <input type="radio" name="salud-enf" value="No" onchange="toggleSaludDetalle('enf')" style="accent-color:var(--accent);width:18px;height:18px;cursor:pointer;"> No
-          </label>
-        </div>
-        <p class="error-msg" id="err-salud-enf">Obligatorio</p>
-      </div>
-      <div class="field" id="field-salud-enf-detalle" style="display:none;">
-        <label for="salud-enf-detalle">Por favor, indicá cuál *</label>
-        <input type="text" id="salud-enf-detalle" placeholder="Describí tu condición médica o alergia" oninput="updateSteps()" />
-        <p class="error-msg" id="err-salud-enf-detalle">Obligatorio</p>
-      </div>
-
-      <!-- Pregunta 2: Medicación -->
-      <div class="field" id="field-salud-med">
-        <label>¿Estás tomando alguna medicación que debamos conocer? *</label>
-        <div style="display:flex;gap:0.75rem;margin-top:0.3rem;">
-          <label style="display:flex;align-items:center;gap:0.45rem;font-size:0.97rem;font-weight:700;color:var(--text);text-transform:none;letter-spacing:0;cursor:pointer;">
-            <input type="radio" name="salud-med" value="Sí" onchange="toggleSaludDetalle('med')" style="accent-color:var(--accent);width:18px;height:18px;cursor:pointer;"> Sí
-          </label>
-          <label style="display:flex;align-items:center;gap:0.45rem;font-size:0.97rem;font-weight:700;color:var(--text);text-transform:none;letter-spacing:0;cursor:pointer;">
-            <input type="radio" name="salud-med" value="No" onchange="toggleSaludDetalle('med')" style="accent-color:var(--accent);width:18px;height:18px;cursor:pointer;"> No
-          </label>
-        </div>
-        <p class="error-msg" id="err-salud-med">Obligatorio</p>
-      </div>
-      <div class="field" id="field-salud-med-detalle" style="display:none;">
-        <label for="salud-med-detalle">Por favor, indicá cuál *</label>
-        <input type="text" id="salud-med-detalle" placeholder="Indicá el medicamento y la dosis" oninput="updateSteps()" />
-        <p class="error-msg" id="err-salud-med-detalle">Obligatorio</p>
-      </div>
-
-      <!-- Pregunta 3: Dieta / restricción alimentaria -->
+      <!-- Pregunta 1: Dieta / restricción alimentaria -->
       <div class="field" id="field-salud-dieta">
         <label>¿Tenés alguna restricción alimentaria o dieta especial? *</label>
         <div style="display:flex;gap:0.75rem;margin-top:0.3rem;">
@@ -1240,6 +1313,44 @@
         </div>
         <input type="hidden" id="salud-dieta-detalle" />
         <p class="error-msg" id="err-salud-dieta-detalle">Obligatorio</p>
+      </div>
+
+      <!-- Pregunta 2: Enfermedad / condición médica / alergia -->
+      <div class="field" id="field-salud-enf">
+        <label>¿Tenés alguna enfermedad, condición médica o alergia que debamos tener en cuenta? *</label>
+        <div style="display:flex;gap:0.75rem;margin-top:0.3rem;">
+          <label style="display:flex;align-items:center;gap:0.45rem;font-size:0.97rem;font-weight:700;color:var(--text);text-transform:none;letter-spacing:0;cursor:pointer;">
+            <input type="radio" name="salud-enf" value="Sí" onchange="toggleSaludDetalle('enf')" style="accent-color:var(--accent);width:18px;height:18px;cursor:pointer;"> Sí
+          </label>
+          <label style="display:flex;align-items:center;gap:0.45rem;font-size:0.97rem;font-weight:700;color:var(--text);text-transform:none;letter-spacing:0;cursor:pointer;">
+            <input type="radio" name="salud-enf" value="No" onchange="toggleSaludDetalle('enf')" style="accent-color:var(--accent);width:18px;height:18px;cursor:pointer;"> No
+          </label>
+        </div>
+        <p class="error-msg" id="err-salud-enf">Obligatorio</p>
+      </div>
+      <div class="field" id="field-salud-enf-detalle" style="display:none;">
+        <label for="salud-enf-detalle">Por favor, indicá cuál *</label>
+        <input type="text" id="salud-enf-detalle" placeholder="Describí tu condición médica o alergia" oninput="updateSteps()" />
+        <p class="error-msg" id="err-salud-enf-detalle">Obligatorio</p>
+      </div>
+
+      <!-- Pregunta 3: Medicación -->
+      <div class="field" id="field-salud-med">
+        <label>¿Estás tomando alguna medicación que debamos conocer? *</label>
+        <div style="display:flex;gap:0.75rem;margin-top:0.3rem;">
+          <label style="display:flex;align-items:center;gap:0.45rem;font-size:0.97rem;font-weight:700;color:var(--text);text-transform:none;letter-spacing:0;cursor:pointer;">
+            <input type="radio" name="salud-med" value="Sí" onchange="toggleSaludDetalle('med')" style="accent-color:var(--accent);width:18px;height:18px;cursor:pointer;"> Sí
+          </label>
+          <label style="display:flex;align-items:center;gap:0.45rem;font-size:0.97rem;font-weight:700;color:var(--text);text-transform:none;letter-spacing:0;cursor:pointer;">
+            <input type="radio" name="salud-med" value="No" onchange="toggleSaludDetalle('med')" style="accent-color:var(--accent);width:18px;height:18px;cursor:pointer;"> No
+          </label>
+        </div>
+        <p class="error-msg" id="err-salud-med">Obligatorio</p>
+      </div>
+      <div class="field" id="field-salud-med-detalle" style="display:none;">
+        <label for="salud-med-detalle">Por favor, indicá cuál *</label>
+        <input type="text" id="salud-med-detalle" placeholder="Indicá el medicamento y la dosis" oninput="updateSteps()" />
+        <p class="error-msg" id="err-salud-med-detalle">Obligatorio</p>
       </div>
 
       <!-- Pregunta 4: Información adicional -->
@@ -2788,7 +2899,7 @@ function enviar() {
   // Número de afiliado (opcional si es sin cobertura)
   const numAfiliado = document.getElementById('num-afiliado').value.trim();
   const esSinCobertura = document.getElementById('cobertura-medica').value.trim() === 'Sin cobertura / Particular';
-  if (!esSinCobertura) {
+  if (!esSinCobertura && document.getElementById('panel-tiene-cobertura').style.display !== 'none') {
     marcarObligatorio('field-afiliado', 'err-afiliado', !numAfiliado);
     if (!numAfiliado) hayError = true;
   }
@@ -2947,6 +3058,45 @@ function enviar() {
   document.getElementById('success-section').style.display = 'block';
 }
 
+// ── Cápsulas de cobertura (Sin / Tengo) ────────────────────────────────────
+function toggleCobertura(val) {
+  const capSin = document.getElementById('cap-sin');
+  const capCon = document.getElementById('cap-con');
+  const dotSin = document.getElementById('dot-sin');
+  const dotCon = document.getElementById('dot-con');
+  const panel  = document.getElementById('panel-tiene-cobertura');
+  const hidden = document.getElementById('cobertura-medica');
+
+  const estiloActivo   = 'background:#FFF0E5;border-color:#F4833A;color:#D96820;box-shadow:0 0 0 3px rgba(244,131,58,0.15);';
+  const estiloInactivo = 'background:var(--input-bg);border-color:var(--border);color:var(--muted);box-shadow:none;';
+  const puntoDentro    = '<span style="width:6px;height:6px;border-radius:50%;background:#F4833A;display:block;"></span>';
+
+  if (val === 'sin') {
+    capSin.style.cssText += estiloActivo;
+    capCon.style.cssText  = 'display:inline-flex;align-items:center;gap:7px;padding:0.5rem 1.1rem;min-height:44px;border-radius:100px;font-family:\'Nunito\',sans-serif;font-size:0.88rem;font-weight:700;cursor:pointer;transition:all 0.15s;' + estiloInactivo;
+    dotSin.innerHTML = puntoDentro;
+    dotCon.innerHTML = '';
+    panel.style.maxHeight = '0';
+    panel.style.opacity   = '0';
+    hidden.value = 'Sin cobertura / Particular';
+    // Limpiar buscador y afiliado
+    const sc = document.getElementById('search-cobertura'); if(sc) sc.value = '';
+    const na = document.getElementById('num-afiliado'); if(na) na.value = '';
+    const fo = document.getElementById('field-cobertura-otro'); if(fo) fo.style.display = 'none';
+    const ot = document.getElementById('cobertura-otro-texto'); if(ot) ot.value = '';
+  } else {
+    capCon.style.cssText += estiloActivo;
+    capSin.style.cssText  = 'display:inline-flex;align-items:center;gap:7px;padding:0.5rem 1.1rem;min-height:44px;border-radius:100px;font-family:\'Nunito\',sans-serif;font-size:0.88rem;font-weight:700;cursor:pointer;transition:all 0.15s;' + estiloInactivo;
+    dotCon.innerHTML = puntoDentro;
+    dotSin.innerHTML = '';
+    panel.style.maxHeight = '600px';
+    panel.style.opacity   = '1';
+    hidden.value = '';
+  }
+  document.getElementById('field-cobertura').classList.remove('field-error');
+  document.getElementById('err-cobertura').style.display = 'none';
+  updateSteps();
+}
 // ── Dropdown buscador de cobertura médica ──────────────────────────────────
 // ── Dropdown buscador de relación con contacto de emergencia ────────────────
 const OPCIONES_RELACION = [
@@ -3070,7 +3220,6 @@ document.addEventListener('click', e => {
 // ────────────────────────────────────────────────────────────────────────────
 
 const OPCIONES_COBERTURA = [
-  'Sin cobertura / Particular',
   'IOMA',
   'OSDE',
   'Swiss Medical',
@@ -3213,17 +3362,6 @@ function seleccionarCobertura(op) {
     drop.classList.remove('open');
     otroField.style.display = 'none';
     otroInput.value = '';
-  }
-
-  // Afiliado: ocultar si no tiene cobertura
-  const afiliadoField = document.getElementById('field-afiliado');
-  if (op === 'Sin cobertura / Particular') {
-    afiliadoField.style.display = 'none';
-    document.getElementById('num-afiliado').value = '';
-    afiliadoField.classList.remove('field-error');
-    document.getElementById('err-afiliado').style.display = 'none';
-  } else {
-    afiliadoField.style.display = 'block';
   }
 
   document.getElementById('field-cobertura').classList.remove('field-error');
@@ -3448,7 +3586,7 @@ function resetForm() {
   // Resetear botón S/N
   const btnSN = document.getElementById('btn-sin-numero');
   const inpNum = document.getElementById('numero');
-  if (btnSN && inpNum) { btnSN.classList.remove('activo'); inpNum.disabled = false; inpNum.placeholder = 'Ej: 1234'; }
+  if (btnSN && inpNum) { btnSN.classList.remove('activo'); inpNum.disabled = false; inpNum.placeholder = 'Ej: 703'; }
   const eb = document.getElementById('edad-badge'); if(eb){ eb.style.display='none'; eb.textContent=''; }
   ['sexo'].forEach(id => document.getElementById(id).value = '');
   ['provincia','municipio','localidad'].forEach(id => document.getElementById(id).value = '');
@@ -3484,6 +3622,12 @@ function resetForm() {
   const fo = document.getElementById('field-cobertura-otro'); if(fo) fo.style.display='none';
   const na = document.getElementById('num-afiliado'); if(na) na.value='';
   const fa = document.getElementById('field-afiliado'); if(fa) fa.style.display='block';
+  const panel = document.getElementById('panel-tiene-cobertura'); if(panel){ panel.style.maxHeight='0'; panel.style.opacity='0'; }
+  const estiloBase = 'display:inline-flex;align-items:center;gap:7px;padding:0.5rem 1.1rem;border-radius:100px;font-family:\'Nunito\',sans-serif;font-size:0.88rem;font-weight:700;cursor:pointer;transition:all 0.15s;background:var(--input-bg);border:1.5px solid var(--border);color:var(--muted);box-shadow:none;';
+  const cs = document.getElementById('cap-sin'); if(cs){ cs.style.cssText = estiloBase; }
+  const cc = document.getElementById('cap-con'); if(cc){ cc.style.cssText = estiloBase; }
+  const ds = document.getElementById('dot-sin'); if(ds) ds.innerHTML='';
+  const dc2 = document.getElementById('dot-con'); if(dc2) dc2.innerHTML='';
   opcionesMun = []; opcionesLoc = [];
   document.getElementById('form-section').style.display = 'block';
   document.getElementById('success-section').style.display = 'none';
@@ -3580,7 +3724,7 @@ function toggleSinNumero() {
     btn.classList.remove('activo');
     inp.disabled = false;
     inp.value = '';
-    inp.placeholder = 'Ej: 1234';
+    inp.placeholder = 'Ej: 703';
     inp.focus();
   } else {
     btn.classList.add('activo');
@@ -3629,6 +3773,12 @@ function validarSoloLetras(id) {
 
 // ── Scroll-reveal animations ─────────────────────────────────────────────────
 (function() {
+  // Red de seguridad: si el celular es muy viejo y no soporta IntersectionObserver,
+  // o si la persona pidió "reducir movimiento", mostramos todo directamente sin
+  // animación. Así nunca queda un campo invisible.
+  var sinObserver = !('IntersectionObserver' in window);
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   // Add reveal class to fields and section titles
   document.querySelectorAll('.field, .two-col').forEach((el, i) => {
     el.classList.add('reveal');
@@ -3637,6 +3787,11 @@ function validarSoloLetras(id) {
   document.querySelectorAll('.section-title').forEach(el => {
     el.classList.add('reveal-section');
   });
+
+  if (sinObserver || reduceMotion) {
+    document.querySelectorAll('.reveal, .reveal-section').forEach(el => el.classList.add('visible'));
+    return;
+  }
 
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
