@@ -1,0 +1,6 @@
+# Publicar SOLO los archivos web. Todo lo demás (apps_script .gs, preview_*.html,
+# panel_pagos_mobile.html, notas, etc.) queda solo en tu compu y NUNCA se sube.
+/*
+!/index.html
+!/panel_pagos.html
+!/.gitignore
