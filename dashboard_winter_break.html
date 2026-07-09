@@ -306,7 +306,8 @@ canvas { cursor: pointer; }
   gap: 1rem;
   margin-bottom: 1.2rem;
 }
-@media(max-width:640px){ .salud-grid { grid-template-columns: minmax(0, 1fr); } }
+.salud-grid > .salud-block.medic { grid-column: 1 / -1; }
+@media(max-width:640px){ .salud-grid { grid-template-columns: minmax(0, 1fr); gap: 0.8rem; } }
 
 .salud-block {
   border-radius: 14px;
@@ -1118,7 +1119,7 @@ function updateSalud(rows){
       '<div class="salud-block-title">Alergias y condiciones médicas &mdash; ' + alerg.length + ' persona' + (alerg.length!==1?'s':'') + '</div>' +
       filasDe(alerg,'alerg') +
     '</div>' +
-    '<div class="salud-block medic" style="grid-column: span 2">' +
+    '<div class="salud-block medic">' +
       '<div class="salud-block-title">Con medicación &mdash; ' + med.length + ' persona' + (med.length!==1?'s':'') + '</div>' +
       '<div class="medic-grid">' + filasDe(med,'med') + '</div>' +
     '</div>'
