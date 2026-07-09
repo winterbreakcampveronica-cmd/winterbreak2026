@@ -995,7 +995,7 @@ function mapInscripto(o){
     n: String(o.nombre||'').trim(),
     a: String(o.apellido||'').trim(),
     g: g,
-    edad: Number(o.edad) || 0,
+    edad: parseInt(String(o.edad).replace(/[^0-9]/g,''), 10) || 0,
     ig: String(o.iglesia||'').trim() || 'Sin especificar',
     mu: String(o.municipio||'').trim() || 'Sin especificar',
     lo: String(o.localidad||'').trim(),
@@ -1027,6 +1027,7 @@ function updateKPIs(rows){
   const edades = rows.filter(r => r.edad>0).map(r => r.edad);
   const avg = arr => arr.length ? Math.round(arr.reduce((s,x)=>s+x,0)/arr.length) : 0;
   setTxt('kTotal', total);
+  setTxt('cGenero', total);
   setTxt('kVar', vars.length);
   setTxt('kMuj', mujs.length);
   setTxt('kProm', avg(edades));
