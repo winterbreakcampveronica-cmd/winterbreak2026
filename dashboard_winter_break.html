@@ -561,9 +561,15 @@ tbody td {
     <div style="font-size:2.4rem;line-height:1">🔒</div>
     <h2 style="font-family:'Playfair Display',serif;font-size:1.5rem;color:#3D2010;margin:0.6rem 0 0.2rem">Panel privado</h2>
     <p style="font-family:'Nunito',sans-serif;font-size:0.9rem;color:#A07050;margin:0 0 1.2rem">Winter Break 2026 · Solo equipo organizador</p>
-    <input id="lockPass" type="password" inputmode="text" autocomplete="off" placeholder="Clave del equipo"
-      style="width:100%;font-size:16px;font-family:'Nunito',sans-serif;padding:0.8rem 1rem;border:1.5px solid #F5D9BC;border-radius:12px;outline:none;color:#3D2010;-webkit-appearance:none"
-      onkeydown="if(event.key==='Enter')tryUnlock()">
+    <div style="position:relative">
+      <input id="lockPass" type="password" inputmode="text" autocomplete="off" placeholder="Clave del equipo"
+        style="width:100%;font-size:16px;font-family:'Nunito',sans-serif;padding:0.8rem 3rem 0.8rem 1rem;border:1.5px solid #F5D9BC;border-radius:12px;outline:none;color:#3D2010;-webkit-appearance:none"
+        onkeydown="if(event.key==='Enter')tryUnlock()">
+      <button type="button" id="lockEye" onclick="togglePass()" aria-label="Mostrar u ocultar clave"
+        style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;padding:8px;cursor:pointer;color:#A07050;display:flex;align-items:center;justify-content:center;touch-action:manipulation">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
     <div id="lockErr" style="min-height:1.1rem;font-size:0.8rem;font-weight:700;color:#C14E00;margin-top:0.5rem"></div>
     <button onclick="tryUnlock()"
       style="width:100%;margin-top:0.4rem;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;color:#fff;background:#F4833A;border:none;border-radius:12px;padding:0.85rem;cursor:pointer;-webkit-appearance:none;touch-action:manipulation">Entrar</button>
@@ -1371,6 +1377,16 @@ function boot(){
   setStatus('cargando', 'Conectando con la planilla…');
   fetchLive();                  // trae la data viva
   setInterval(fetchLive, REFRESH_MS);
+}
+const EYE_ON  = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>';
+const EYE_OFF = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+function togglePass(){
+  const inp = document.getElementById('lockPass');
+  const btn = document.getElementById('lockEye');
+  const mostrar = inp.type === 'password';
+  inp.type = mostrar ? 'text' : 'password';
+  btn.innerHTML = mostrar ? EYE_OFF : EYE_ON;
+  inp.focus();
 }
 function tryUnlock(){
   const inp = document.getElementById('lockPass');
