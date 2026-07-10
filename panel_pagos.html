@@ -170,6 +170,16 @@
   tbody td { padding: 0.55rem 0.55rem; border-bottom: 1px solid var(--grid); border-right: 1px solid var(--grid); vertical-align: middle; font-size: 0.9rem; }
   tbody td:last-child { border-right: none; }
   tbody td.cell-num, tbody td.cell-pv, tbody td.cell-desc, tbody td.cell-rest, tbody td.cell-reg { text-align: center; }
+  /* Fila de TOTALES (fija abajo) */
+  tfoot td { position: sticky; bottom: 0; z-index: 4; background: #FBF6EF; padding: 0.6rem 0.55rem;
+    border-top: 2px solid var(--grid); box-shadow: inset 0 2px 0 var(--grid); border-right: 1px solid var(--grid); }
+  tfoot td:last-child { border-right: none; }
+  tfoot .col-num { text-align: center; font-family: var(--ff-num); font-weight: 800; font-size: 0.95rem; color: var(--text); }
+  tfoot .total-lbl { font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-size: 0.8rem; }
+  tfoot .cell-pago, tfoot .cell-rest { text-align: center; }
+  tfoot .total-num { font-family: var(--ff-num); font-weight: 800; font-size: 0.95rem; white-space: nowrap; }
+  tfoot .cell-pago .total-num { color: var(--pos); }
+  tfoot .cell-rest .total-num { color: var(--neg); }
   tbody tr:last-child td { border-bottom: none; }
   tbody tr:hover { background: #FFFAF4; }
   tbody tr { border-left: 4px solid transparent; }
@@ -471,6 +481,7 @@
         <tbody id="tbody">
           <tr><td colspan="9"><div class="state-msg"><div class="spinner"></div>Cargando inscriptos…</div></td></tr>
         </tbody>
+        <tfoot id="tfoot"></tfoot>
       </table>
     </div>
   </div>
@@ -580,6 +591,12 @@ function effectiveState(ins){
     else                        restante = precioFinal;
   }
   return { tarifa, descuento, estado, precioBase, precioFinal, montoPagado, restante };
+}
+/* Monto que se muestra en la columna PAGÓ para un estado efectivo */
+function pagadoDe(eff){
+  if(eff.estado === 'total') return eff.precioFinal || 0;
+  if(eff.estado === 'parte' || eff.estado === 'servicio') return eff.montoPagado || 0;
+  return 0;
 }
 /* Color de la fila SEGÚN el estado que se está eligiendo (dinámico), no lo guardado */
 function rowStatusOf(eff){
@@ -764,11 +781,20 @@ function renderTabla(){
     th.querySelector('.arw').textContent = (k === sortKey) ? (sortDir === 1 ? '↑' : '↓') : '↕';
   });
   const tbody = document.getElementById('tbody');
+  const tfoot = document.getElementById('tfoot');
   const total = INSCRIPTOS.length;
   const lista = ordenar(filtrar());
-  if(!total){ tbody.innerHTML = '<tr><td colspan="9"><div class="state-msg"><span class="em">📭</span>Todavía no hay inscriptos en la planilla.</div></td></tr>'; return; }
-  if(!lista.length){ tbody.innerHTML = '<tr><td colspan="9"><div class="state-msg"><span class="em">🔎</span>Nadie coincide con la búsqueda o el filtro.</div></td></tr>'; return; }
+  if(!total){ tbody.innerHTML = '<tr><td colspan="9"><div class="state-msg"><span class="em">📭</span>Todavía no hay inscriptos en la planilla.</div></td></tr>'; tfoot.innerHTML = ''; return; }
+  if(!lista.length){ tbody.innerHTML = '<tr><td colspan="9"><div class="state-msg"><span class="em">🔎</span>Nadie coincide con la búsqueda o el filtro.</div></td></tr>'; tfoot.innerHTML = ''; return; }
   tbody.innerHTML = lista.map((i, idx) => filaHtml(i, idx + 1)).join('');
+  let sumPago = 0, sumRest = 0;
+  lista.forEach(i => { const eff = effectiveState(i); sumPago += pagadoDe(eff); sumRest += (eff.restante || 0); });
+  tfoot.innerHTML = '<tr class="total-row">'
+    + '<td class="col-num">'+lista.length+'</td>'
+    + '<td colspan="5"><span class="total-lbl">Total</span></td>'
+    + '<td class="cell-pago"><span class="total-num">'+fmtPesos(sumPago)+'</span></td>'
+    + '<td class="cell-rest"><span class="total-num">'+fmtPesos(sumRest)+'</span></td>'
+    + '<td></td></tr>';
   montarSelectores();
 }
 function filaHtml(i, num){
