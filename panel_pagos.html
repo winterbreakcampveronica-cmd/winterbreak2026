@@ -109,6 +109,9 @@
   .stat-card .big.warn { color: var(--warn); }
   .stat-card .big.serv { color: var(--serv); }
   .stat-card .alt { font-size: 0.78rem; color: var(--muted); font-weight: 600; margin-top: 3px; }
+  .stat-card.stat-clickable { cursor: pointer; transition: box-shadow 0.15s, transform 0.1s; }
+  .stat-card.stat-clickable:hover { box-shadow: 0 5px 18px rgba(244,131,58,0.16); transform: translateY(-1px); }
+  .stat-card.stat-active { box-shadow: 0 0 0 3px rgba(244,131,58,0.25), 0 6px 20px rgba(244,131,58,0.16); }
 
   /* ===== Toolbar ===== */
   .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 0.9rem; }
@@ -200,14 +203,16 @@
   .seg-btn.on-si { background: var(--pos); color: #fff; }
   .seg-btn.on-no { background: #EBE4DC; color: var(--muted); }
 
-  .money-cell { position: relative; display: inline-flex; align-items: center; max-width: 130px; }
+  .money-cell { position: relative; display: inline-flex; align-items: center; }
   .money-cell .pfx { position: absolute; left: 0.55rem; font-family: var(--ff-num); font-weight: 700; color: var(--muted); font-size: 0.85rem; pointer-events: none; }
   .pago-in {
-    width: 100%; max-width: 130px; padding: 0.45rem 0.5rem 0.45rem 1.3rem;
+    width: 120px; max-width: 100%; padding: 0.45rem 0.5rem 0.45rem 1.35rem;
     border: 1.5px solid var(--border); border-radius: 10px; background: var(--input-bg);
     font-family: var(--ff-num); font-size: 0.9rem; font-weight: 700; color: var(--text); outline: none;
     transition: border-color 0.15s, box-shadow 0.15s;
+    box-sizing: border-box;
   }
+  td.cell-pago { min-width: 132px; }
   .pago-in:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(244,131,58,0.16); background: #fff; }
   .pago-in:disabled { background: var(--pos-bg); border-color: #CDE9D8; color: var(--pos); -webkit-text-fill-color: var(--pos); opacity: 1; }
   .muted-dash { color: var(--muted); font-weight: 700; }
@@ -263,10 +268,12 @@
   .sel-block:last-child { margin-bottom: 0; }
   .sel-block.early { background: var(--pos-bg); }
   .sel-block.late  { background: var(--warn-bg); }
+  .sel-block.serv  { background: var(--serv-bg); }
   .sel-blabel { font-size: 0.64rem; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase;
     padding: 4px 6px 7px; display: flex; align-items: center; gap: 6px; }
   .sel-block.early .sel-blabel { color: var(--pos); }
   .sel-block.late  .sel-blabel { color: var(--warn); }
+  .sel-block.serv  .sel-blabel { color: var(--serv); }
   .sel-block .sel-opt { margin-bottom: 5px; }
   .sel-block .sel-block-items .sel-opt:last-child { margin-bottom: 0; }
   .sel-opt .opt-check { margin-left: auto; color: var(--pos); display: none; }
@@ -303,10 +310,11 @@
   #vistaCards .lbl { display: block; font-size: .66rem; font-weight: 900; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin: 14px 2px 7px; }
   #vistaCards .lbl.first { margin-top: 10px; }
   #vistaCards .gtag { font-size: .63rem; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; margin: 2px 2px 7px; display: flex; align-items: center; gap: 6px; }
-  #vistaCards .gtag.e { color: var(--pos); } #vistaCards .gtag.l { color: var(--warn); }
+  #vistaCards .gtag.e { color: var(--pos); } #vistaCards .gtag.l { color: var(--warn); } #vistaCards .gtag.s { color: var(--serv); }
   #vistaCards .tgroup { border-radius: 13px; padding: 9px 9px 11px; margin-bottom: 9px; border: 1.5px solid transparent; }
   #vistaCards .tgroup.early { background: var(--pos-bg); border-color: #CBE8D5; }
   #vistaCards .tgroup.late { background: var(--warn-bg); border-color: #F3E0BE; }
+  #vistaCards .tgroup.serv { background: var(--serv-bg); border-color: #D3D9F0; }
   #vistaCards .grp { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   #vistaCards .opt { border: 1.5px solid var(--border); background: #fff; border-radius: 12px; padding: 10px 8px; text-align: center;
     cursor: pointer; font-family: 'Nunito',sans-serif; color: var(--text); min-height: 56px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
@@ -401,6 +409,7 @@
   </div>
 
   <div class="stat-grid" id="stats"></div>
+  <div class="stat-grid" id="statsTarifas"></div>
 
   <div class="toolbar">
     <div class="search-box">
@@ -461,10 +470,12 @@ const TARIFAS = [
   { label: 'Hasta 10/07 · Grupo (4+)', sub: '4 o más de la misma iglesia', monto: 90000,  grupo: 'early', corto: 'Grupo (4+)', desc: '4 o más de la misma iglesia' },
   { label: 'Desde 11/07 · Individual', sub: 'A partir del 11 de julio',     monto: 115000, grupo: 'late',  corto: 'Individual', desc: 'Tarifa general' },
   { label: 'Desde 11/07 · Grupo (4+)', sub: '4 o más de la misma iglesia',  monto: 105000, grupo: 'late',  corto: 'Grupo (4+)', desc: '4 o más de la misma iglesia' },
+  { label: 'Servicio',                 sub: 'Viene a servir · no paga',      monto: 0,      grupo: 'serv',  corto: 'Servicio',   desc: 'Viene a servir · no paga' },
 ];
 const GRUPOS_TARIFA = {
   early: { label: '◆ Hasta el 10 de julio', cls: 'early' },
   late:  { label: '◆ Desde el 11 de julio', cls: 'late'  },
+  serv:  { label: '◆ Servicio (no paga)',   cls: 'serv'  },
 };
 const TARIFA_BY_LABEL = Object.fromEntries(TARIFAS.map(t => [t.label, t]));
 const DESCUENTO_POLLOS = 5000;
@@ -528,6 +539,7 @@ function effectiveState(ins){
   else if(s && s.tipo === 'parcial') estado = 'parte';
   else estado = null;
   const t = tarifa ? TARIFA_BY_LABEL[tarifa] : null;
+  if(t && t.grupo === 'serv') estado = 'servicio';   // si la opción de pago es Servicio => siempre $0 y pago completo
   const precioBase = t ? t.monto : (s ? s.precio : 0);
   let precioFinal = Math.max(precioBase - (descuento ? DESCUENTO_POLLOS : 0), 0);
   let montoPagado;
@@ -545,7 +557,7 @@ function effectiveState(ins){
   }
   return { tarifa, descuento, estado, precioBase, precioFinal, montoPagado, restante };
 }
-function isValid(eff){ return eff.estado === 'servicio' || (!!eff.tarifa && !!eff.estado && (eff.estado === 'total' || eff.montoPagado > 0)); }
+function isValid(eff){ return eff.estado === 'servicio' || (!!eff.tarifa && !!eff.estado); }
 function setDraft(dni, patch){ DRAFTS[dni] = Object.assign({}, DRAFTS[dni] || {}, patch); }
 function editando(){
   if(Object.keys(DRAFTS).length > 0) return true;
@@ -623,24 +635,32 @@ function mergear(inscriptos, pagos){
 /* ════════════════════════════════════════════════════════════════════════
    FILTRO + MÉTRICAS (compartido por las dos vistas)
    ════════════════════════════════════════════════════════════════════════ */
+function coincideFiltro(i){
+  if(filtroActivo === 'todos') return true;
+  if(filtroActivo === 'servicio') return !!(i.saved && i.saved.tipo === 'servicio');
+  if(filtroActivo.indexOf('tarifa:') === 0) return !!(i.saved && i.saved.tarifa === filtroActivo.slice(7));
+  return statusOf(i) === filtroActivo;   // 'sin' | 'parcial' | 'total'
+}
 function filtrar(){
   const q = _norm(textoBusqueda);
   return INSCRIPTOS.filter(i => {
-    const st = statusOf(i);
-    if(filtroActivo !== 'todos' && st !== filtroActivo) return false;
+    if(!coincideFiltro(i)) return false;
     if(q && !_norm(i.nombre + ' ' + i.apellido + ' ' + i.dni + ' ' + i.iglesia).includes(q)) return false;
     return true;
   });
 }
 function metricas(){
   let nTotal=0, nParcial=0, nSin=0, nServicio=0, recaudado=0, pendiente=0;
+  const porTarifa = {};
+  TARIFAS.forEach(t => { porTarifa[t.label] = 0; });
   INSCRIPTOS.forEach(i => {
     const st = statusOf(i);
     if(st === 'total'){ nTotal++; recaudado += (i.saved.entregado || i.saved.precio); if(i.saved.tipo === 'servicio') nServicio++; }
     else if(st === 'parcial'){ nParcial++; recaudado += i.saved.entregado; pendiente += i.saved.saldo; }
     else nSin++;
+    if(i.saved && i.saved.tarifa && porTarifa.hasOwnProperty(i.saved.tarifa)) porTarifa[i.saved.tarifa]++;
   });
-  return { total: INSCRIPTOS.length, nTotal, nParcial, nSin, nServicio, recaudado, pendiente };
+  return { total: INSCRIPTOS.length, nTotal, nParcial, nSin, nServicio, recaudado, pendiente, porTarifa };
 }
 
 /* ════════════════════════════════════════════════════════════════════════
@@ -650,21 +670,30 @@ function render(){
   if(primeraCarga) return;
   const m = metricas();
   renderStats(m);
+  renderStatsTarifas(m);
   renderFiltros(m);
   if(esMobile()) renderCards(); else renderTabla();
 }
-function statCard(acc, lbl, big, cls, alt){
-  return '<div class="stat-card '+acc+'"><div class="lbl">'+lbl+'</div><div class="big '+(cls||'')+'">'+big+'</div>'+(alt?'<div class="alt">'+alt+'</div>':'')+'</div>';
+function statCard(acc, lbl, big, cls, alt, filtro){
+  const clickable = filtro ? ' stat-clickable'+(filtro===filtroActivo?' stat-active':'') : '';
+  const attr = filtro ? ' data-filtro="'+esc(filtro)+'"' : '';
+  return '<div class="stat-card '+acc+clickable+'"'+attr+'><div class="lbl">'+lbl+'</div><div class="big '+(cls||'')+'">'+big+'</div>'+(alt?'<div class="alt">'+alt+'</div>':'')+'</div>';
 }
 function renderStats(m){
   document.getElementById('stats').innerHTML =
-    statCard('acc-a',   'Inscriptos',    m.total,               '',     'personas anotadas') +
-    statCard('acc-pos', 'Pago completo', m.nTotal,              'pos',  m.total ? Math.round(m.nTotal/m.total*100)+'% del total' : '') +
-    statCard('acc-serv','Servicio',      m.nServicio,           'serv', 'vienen a servir') +
-    statCard('acc-warn','Pago parcial',  m.nParcial,            'warn', 'con saldo pendiente') +
-    statCard('acc-grey','Sin registrar', m.nSin,                '',     'falta cargar el pago') +
+    statCard('acc-a',   'Inscriptos',    m.total,               '',     'personas anotadas',       'todos') +
+    statCard('acc-pos', 'Pago completo', m.nTotal,              'pos',  m.total ? Math.round(m.nTotal/m.total*100)+'% del total' : '', 'total') +
+    statCard('acc-serv','Servicio',      m.nServicio,           'serv', 'vienen a servir',          'servicio') +
+    statCard('acc-warn','Pago parcial',  m.nParcial,            'warn', 'con saldo pendiente',      'parcial') +
+    statCard('acc-grey','Sin registrar', m.nSin,                '',     'falta cargar el pago',     'sin') +
     statCard('acc-pos', 'Recaudado',     fmtPesos(m.recaudado), 'pos',  'dinero recibido') +
     statCard('acc-neg', 'Pendiente',     fmtPesos(m.pendiente), 'neg',  'saldo de pagos parciales');
+}
+function renderStatsTarifas(m){
+  const cards = TARIFAS.filter(t => t.grupo !== 'serv').map(t =>
+    statCard('acc-a', t.label, m.porTarifa[t.label] || 0, '', fmtPesos(t.monto), 'tarifa:'+t.label)
+  ).join('');
+  document.getElementById('statsTarifas').innerHTML = cards;
 }
 function renderFiltros(m){
   const cont = { todos: m.total, sin: m.nSin, parcial: m.nParcial, total: m.nTotal };
@@ -724,14 +753,20 @@ function filaHtml(i, num){
   const insCell = '<div class="ins-name">'+esc(i.nombre)+' '+esc(i.apellido)+'</div><div class="ins-sub">'+sub+'</div>';
   const tarifaCell = '<div class="sel row-sel" data-dni="'+esc(dni)+'"></div>';
   const noTarifa = !eff.tarifa;
+  const esServ = eff.estado === 'servicio';
   const dis = noTarifa ? ' disabled' : '';
-  const descCell = '<div class="seg desc-seg'+(noTarifa?' locked':'')+'">'
-    + '<button class="seg-btn '+(eff.descuento?'on-si':'')+'"'+dis+' data-act="descuento" data-val="si" data-dni="'+esc(dni)+'">Sí</button>'
-    + '<button class="seg-btn '+(!eff.descuento?'on-no':'')+'"'+dis+' data-act="descuento" data-val="no" data-dni="'+esc(dni)+'">No</button></div>';
-  const segCell = '<div class="seg'+(noTarifa?' locked':'')+'">'
-    + '<button class="seg-btn '+(eff.estado==='total'?'on-total':'')+'"'+dis+' data-act="estado" data-val="total" data-dni="'+esc(dni)+'">Total</button>'
-    + '<button class="seg-btn '+(eff.estado==='parte'?'on-parte':'')+'"'+dis+' data-act="estado" data-val="parte" data-dni="'+esc(dni)+'">Parcial</button>'
-    + '<button class="seg-btn '+(eff.estado==='servicio'?'on-serv':'')+'" data-act="estado" data-val="servicio" data-dni="'+esc(dni)+'">Servicio</button></div>';
+  let descCell, segCell;
+  if(esServ){
+    descCell = '<span class="muted-dash">—</span>';
+    segCell  = '<span class="muted-dash">—</span>';
+  } else {
+    descCell = '<div class="seg desc-seg'+(noTarifa?' locked':'')+'">'
+      + '<button class="seg-btn '+(eff.descuento?'on-si':'')+'"'+dis+' data-act="descuento" data-val="si" data-dni="'+esc(dni)+'">Sí</button>'
+      + '<button class="seg-btn '+(!eff.descuento?'on-no':'')+'"'+dis+' data-act="descuento" data-val="no" data-dni="'+esc(dni)+'">No</button></div>';
+    segCell = '<div class="seg'+(noTarifa?' locked':'')+'">'
+      + '<button class="seg-btn '+(eff.estado==='total'?'on-total':'')+'"'+dis+' data-act="estado" data-val="total" data-dni="'+esc(dni)+'">Total</button>'
+      + '<button class="seg-btn '+(eff.estado==='parte'?'on-parte':'')+'"'+dis+' data-act="estado" data-val="parte" data-dni="'+esc(dni)+'">Parcial</button></div>';
+  }
   let pagoCell;
   if(eff.estado === 'total') pagoCell = '<div class="money-cell"><span class="pfx">$</span><input class="pago-in" value="'+(eff.precioFinal?fmtNum(eff.precioFinal):'')+'" disabled></div>';
   else if(eff.estado === 'servicio') pagoCell = '<div class="money-cell"><span class="pfx">$</span><input class="pago-in" value="0" disabled></div>';
@@ -771,7 +806,7 @@ function montarSelectores(){
       clave: o => o.label, grupoDe: o => o.grupo, grupos: GRUPOS_TARIFA,
       render: (o) => '<span class="otxt"><span class="nm">'+o.corto+'</span><small>'+o.desc+'</small></span><span class="opt-price">'+fmtPesos(o.monto)+'</span>',
       renderView: o => '<span class="vtxt"><span class="nm">'+o.label+'</span><span class="vprice">'+fmtPesos(o.monto)+'</span></span>',
-      onPick: o => { setDraft(dni, { tarifa: o.label }); render(); }
+      onPick: o => { const patch = { tarifa: o.label }; if(o.grupo === 'serv') patch.estado = 'servicio'; setDraft(dni, patch); render(); }
     });
   });
 }
@@ -804,18 +839,19 @@ function bodyHtml(i){
   const dni = esc(i.dni);
   const dirty = !!DRAFTS[i.dni];
   const noTarifa = !eff.tarifa;
+  const esServ = eff.estado === 'servicio';
   const dis = noTarifa ? ' disabled' : '';
   const optBtn = t => '<button class="opt'+(eff.tarifa===t.label?' on':'')+'" data-act="tarifa" data-val="'+esc(t.label)+'" data-dni="'+dni+'"><span class="ot">'+t.corto+'</span><span class="op">'+fmtPesos(t.monto)+'</span></button>';
   const tarifaBlock =
       '<div class="tgroup early"><div class="gtag e">● Hasta el 10 de julio</div><div class="grp">'+TARIFAS.filter(t=>t.grupo==='early').map(optBtn).join('')+'</div></div>'
-    + '<div class="tgroup late"><div class="gtag l">● Desde el 11 de julio</div><div class="grp">'+TARIFAS.filter(t=>t.grupo==='late').map(optBtn).join('')+'</div></div>';
-  const descBlock = '<span class="lbl">Descuento pollos 🐤</span><div class="seg">'
+    + '<div class="tgroup late"><div class="gtag l">● Desde el 11 de julio</div><div class="grp">'+TARIFAS.filter(t=>t.grupo==='late').map(optBtn).join('')+'</div></div>'
+    + '<div class="tgroup serv"><div class="gtag s">● Servicio (no paga)</div><div class="grp">'+TARIFAS.filter(t=>t.grupo==='serv').map(optBtn).join('')+'</div></div>';
+  const descBlock = esServ ? '' : '<span class="lbl">Descuento pollos 🐤</span><div class="seg">'
     + '<button class="sbtn '+(eff.descuento?'on-si':'')+'"'+dis+' data-act="descuento" data-val="si" data-dni="'+dni+'">Sí</button>'
     + '<button class="sbtn '+(!eff.descuento?'on-no':'')+'"'+dis+' data-act="descuento" data-val="no" data-dni="'+dni+'">No</button></div>';
-  const estadoBlock = '<span class="lbl">¿Cómo pagó?</span><div class="seg">'
+  const estadoBlock = esServ ? '' : '<span class="lbl">¿Cómo pagó?</span><div class="seg">'
     + '<button class="sbtn '+(eff.estado==='total'?'on-total':'')+'"'+dis+' data-act="estado" data-val="total" data-dni="'+dni+'">Total</button>'
-    + '<button class="sbtn '+(eff.estado==='parte'?'on-parte':'')+'"'+dis+' data-act="estado" data-val="parte" data-dni="'+dni+'">Parcial</button>'
-    + '<button class="sbtn '+(eff.estado==='servicio'?'on-serv':'')+'" data-act="estado" data-val="servicio" data-dni="'+dni+'">Servicio</button></div>';
+    + '<button class="sbtn '+(eff.estado==='parte'?'on-parte':'')+'"'+dis+' data-act="estado" data-val="parte" data-dni="'+dni+'">Parcial</button></div>';
   let montoBlock = '';
   if(eff.estado === 'total') montoBlock = '<span class="lbl">Pagó</span><div class="money-cell"><span class="pfx">$</span><input value="'+(eff.precioFinal?fmtNum(eff.precioFinal):'')+'" disabled></div>';
   else if(eff.estado === 'servicio') montoBlock = '<span class="lbl">Pagó</span><div class="money-cell"><span class="pfx">$</span><input value="0" disabled></div>';
@@ -1030,7 +1066,10 @@ document.getElementById('vistaCards').addEventListener('click', e => {
   if(el.disabled) return;
   const eff = effectiveState(BY_DNI[dni]);
   if(act === 'tarifa'){
-    setDraft(dni, { tarifa: el.dataset.val }); refreshCard(dni);
+    const patch = { tarifa: el.dataset.val };
+    const tSel = TARIFA_BY_LABEL[el.dataset.val];
+    if(tSel && tSel.grupo === 'serv') patch.estado = 'servicio';
+    setDraft(dni, patch); refreshCard(dni);
   } else if(act === 'descuento'){
     if(!eff.tarifa) return;
     setDraft(dni, { descuento: el.dataset.val === 'si' }); refreshCard(dni);
@@ -1069,6 +1108,17 @@ document.getElementById('filters').addEventListener('click', e => {
   if(!chip) return;
   filtroActivo = chip.dataset.f; render();
 });
+function statCardClick(e){
+  const card = e.target.closest('.stat-clickable');
+  if(!card) return;
+  const f = card.dataset.filtro;
+  filtroActivo = (filtroActivo === f) ? 'todos' : f;   // reclick en la activa => limpia
+  render();
+  const target = esMobile() ? document.getElementById('vistaCards') : document.getElementById('vistaTabla');
+  if(target) target.scrollIntoView({ behavior: REDUCE_MOTION ? 'auto' : 'smooth', block: 'start' });
+}
+document.getElementById('stats').addEventListener('click', statCardClick);
+document.getElementById('statsTarifas').addEventListener('click', statCardClick);
 document.querySelectorAll('#tabla thead th').forEach(th => {
   th.addEventListener('click', () => {
     const k = th.dataset.sort;
