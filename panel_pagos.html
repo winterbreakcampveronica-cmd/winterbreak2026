@@ -39,6 +39,7 @@
     --muted: #A07050;
     --border: #F5D9BC;
     --border-soft: #F6E6D4;
+    --grid: #D9D9D9;
     --input-bg: #FFFCF8;
     --pos: #1F9D57;
     --pos-bg: #E9F6EE;
@@ -157,24 +158,35 @@
     background: var(--card);
     text-align: center; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.04em;
     color: var(--muted); font-weight: 800; padding: 0.7rem 0.55rem;
-    box-shadow: inset 0 -2px 0 var(--border);
+    box-shadow: inset 0 -2px 0 var(--grid);
     cursor: pointer; white-space: nowrap; user-select: none;
-    border-right: 1px solid var(--border);
+    border-right: 1px solid var(--grid);
   }
   thead th:last-child { border-right: none; }
   thead th:hover { color: var(--accent-dark); }
   thead th .arw { font-size: 0.7rem; opacity: 0.4; margin-left: 2px; }
   thead th.sorted .arw { opacity: 1; color: var(--accent); }
   thead th.sorted { color: var(--accent-dark); }
-  tbody td { padding: 0.55rem 0.55rem; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); vertical-align: middle; font-size: 0.9rem; }
+  tbody td { padding: 0.55rem 0.55rem; border-bottom: 1px solid var(--grid); border-right: 1px solid var(--grid); vertical-align: middle; font-size: 0.9rem; }
   tbody td:last-child { border-right: none; }
-  tbody td.cell-num, tbody td.cell-pv, tbody td.cell-desc, tbody td.cell-rest { text-align: center; }
+  tbody td.cell-num, tbody td.cell-pv, tbody td.cell-desc, tbody td.cell-rest, tbody td.cell-reg { text-align: center; }
   tbody tr:last-child td { border-bottom: none; }
   tbody tr:hover { background: #FFFAF4; }
   tbody tr { border-left: 4px solid transparent; }
   tbody tr.st-total   { border-left-color: var(--pos); }
   tbody tr.st-parcial { border-left-color: var(--warn); }
+  tbody tr.st-servicio{ border-left-color: var(--serv); }
   tbody tr.st-sin     { border-left-color: var(--grey); }
+  /* Toda la fila coloreada según el estado (texto y números; se excluyen botones y chips para que sigan legibles) */
+  tbody tr.st-total    td, tbody tr.st-total    td *:not(.seg-btn):not(.pv):not(.chip):not(.btn-save) { color: var(--pos)  !important; }
+  tbody tr.st-parcial  td, tbody tr.st-parcial  td *:not(.seg-btn):not(.pv):not(.chip):not(.btn-save) { color: var(--warn) !important; }
+  tbody tr.st-servicio td, tbody tr.st-servicio td *:not(.seg-btn):not(.pv):not(.chip):not(.btn-save) { color: var(--serv) !important; }
+  tbody tr.st-total    .pago-in { -webkit-text-fill-color: var(--pos)  !important; }
+  tbody tr.st-parcial  .pago-in { -webkit-text-fill-color: var(--warn) !important; }
+  tbody tr.st-servicio .pago-in { -webkit-text-fill-color: var(--serv) !important; }
+  tbody tr.st-total    .pv { background: var(--pos-bg);  color: var(--pos)  !important; }
+  tbody tr.st-parcial  .pv { background: var(--warn-bg); color: var(--warn) !important; }
+  tbody tr.st-servicio .pv { background: var(--serv-bg); color: var(--serv) !important; }
 
   .col-num { color: var(--muted); font-weight: 700; font-family: var(--ff-num); font-size: 0.82rem; width: 34px; }
   .ins-name { font-weight: 800; color: var(--text); line-height: 1.2; }
@@ -200,7 +212,9 @@
   .seg-btn:disabled { color: #CDBBA6; background: #FAF6F0; cursor: not-allowed; }
   .seg-btn:disabled:hover { background: #FAF6F0; }
   .seg.locked .seg-btn:disabled { opacity: 1; }
-  .seg-btn.on-si { background: var(--pos); color: #fff; }
+  .seg-btn.on-si { background: var(--grey); color: #fff; }
+  .seg-btn.on-si.tone-pos  { background: var(--pos); }
+  .seg-btn.on-si.tone-warn { background: var(--warn); }
   .seg-btn.on-no { background: #EBE4DC; color: var(--muted); }
 
   .money-cell { position: relative; display: inline-flex; align-items: center; }
@@ -231,10 +245,10 @@
   .btn-save:disabled { background: #F0DCC5; color: #C8956A; cursor: not-allowed; box-shadow: none; }
   .btn-save.ok { background: var(--pos); box-shadow: none; }
   .chip { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; padding: 3px 9px; border-radius: 100px; white-space: nowrap; display: inline-block; }
-  .chip.c-total   { background: var(--pos-bg); color: var(--pos); }
-  .chip.c-serv    { background: var(--serv-bg); color: var(--serv); }
-  .chip.c-parcial { background: var(--warn-bg); color: var(--warn); }
-  .chip.c-sin     { background: #F0ECE7; color: var(--grey); }
+  .chip.c-total   { background: var(--pos);  color: #fff; }
+  .chip.c-serv    { background: var(--serv); color: #fff; }
+  .chip.c-parcial { background: var(--warn); color: #fff; }
+  .chip.c-sin     { background: var(--grey); color: #fff; }
   .reg-fecha { font-size: 0.68rem; color: var(--muted); font-weight: 700; margin-top: 3px; }
 
   /* Selector de tarifa dentro de la fila (tabla) */
@@ -296,16 +310,17 @@
   #vistaCards .head { display: flex; align-items: center; gap: 10px; padding: 13px 14px; cursor: pointer; border-left: 5px solid var(--grey); }
   #vistaCards .item.st-total .head { border-left-color: var(--pos); }
   #vistaCards .item.st-parcial .head { border-left-color: var(--warn); }
+  #vistaCards .item.st-servicio .head { border-left-color: var(--serv); }
   #vistaCards .item.st-sin .head { border-left-color: var(--grey); }
   #vistaCards .head .g { flex: 1; min-width: 0; }
   #vistaCards .head .n { font-weight: 800; font-size: .98rem; line-height: 1.2; }
   #vistaCards .head .s { font-size: .74rem; color: var(--muted); font-weight: 700; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #vistaCards .head .cev { color: var(--muted); font-weight: 900; font-size: .8rem; }
   #vistaCards .chip { display: inline-block; font-size: .66rem; font-weight: 900; padding: 4px 9px; border-radius: 20px; text-transform: uppercase; letter-spacing: .02em; white-space: nowrap; }
-  #vistaCards .chip.sin { background: #F0E7DC; color: var(--muted); }
-  #vistaCards .chip.parcial { background: var(--warn-bg); color: var(--warn); }
-  #vistaCards .chip.total { background: var(--pos-bg); color: var(--pos); }
-  #vistaCards .chip.serv { background: var(--serv-bg); color: var(--serv); }
+  #vistaCards .chip.sin { background: var(--grey); color: #fff; }
+  #vistaCards .chip.parcial { background: var(--warn); color: #fff; }
+  #vistaCards .chip.total { background: var(--pos); color: #fff; }
+  #vistaCards .chip.serv { background: var(--serv); color: #fff; }
   #vistaCards .body { padding: 4px 14px 16px; border-top: 1px dashed var(--border); }
   #vistaCards .lbl { display: block; font-size: .66rem; font-weight: 900; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin: 14px 2px 7px; }
   #vistaCards .lbl.first { margin-top: 10px; }
@@ -329,7 +344,9 @@
   #vistaCards .sbtn.on-total { background: var(--pos); border-color: var(--pos); color: #fff; }
   #vistaCards .sbtn.on-parte { background: var(--warn); border-color: var(--warn); color: #fff; }
   #vistaCards .sbtn.on-serv { background: var(--serv); border-color: var(--serv); color: #fff; }
-  #vistaCards .sbtn.on-si { background: var(--pos); border-color: var(--pos); color: #fff; }
+  #vistaCards .sbtn.on-si { background: var(--grey); border-color: var(--grey); color: #fff; }
+  #vistaCards .sbtn.on-si.tone-pos  { background: var(--pos);  border-color: var(--pos); }
+  #vistaCards .sbtn.on-si.tone-warn { background: var(--warn); border-color: var(--warn); }
   #vistaCards .sbtn.on-no { background: #F4EBE0; border-color: var(--border); color: var(--muted); }
   #vistaCards .hint { font-size: .74rem; color: var(--muted); font-weight: 700; padding: 4px 2px; }
   #vistaCards .money-cell { position: relative; display: flex; align-items: center; max-width: none; width: 100%; }
@@ -543,7 +560,7 @@ function effectiveState(ins){
   const precioBase = t ? t.monto : (s ? s.precio : 0);
   let precioFinal = Math.max(precioBase - (descuento ? DESCUENTO_POLLOS : 0), 0);
   let montoPagado;
-  if(estado === 'servicio'){ precioFinal = 0; montoPagado = 0; }
+  if(estado === 'servicio'){ precioFinal = 0; montoPagado = (d.montoPagado !== undefined) ? d.montoPagado : (s ? s.entregado : 0); }
   else if(estado === 'total') montoPagado = precioFinal;
   else if(d.montoPagado !== undefined) montoPagado = d.montoPagado;
   else montoPagado = s ? s.entregado : 0;
@@ -556,6 +573,13 @@ function effectiveState(ins){
     else                        restante = precioFinal;
   }
   return { tarifa, descuento, estado, precioBase, precioFinal, montoPagado, restante };
+}
+/* Color de la fila SEGÚN el estado que se está eligiendo (dinámico), no lo guardado */
+function rowStatusOf(eff){
+  return eff.estado === 'servicio' ? 'servicio'
+       : eff.estado === 'total'    ? 'total'
+       : eff.estado === 'parte'    ? 'parcial'
+       : 'sin';
 }
 function isValid(eff){ return eff.estado === 'servicio' || (!!eff.tarifa && !!eff.estado); }
 function setDraft(dni, patch){ DRAFTS[dni] = Object.assign({}, DRAFTS[dni] || {}, patch); }
@@ -760,8 +784,9 @@ function filaHtml(i, num){
     descCell = '<span class="muted-dash">—</span>';
     segCell  = '<span class="muted-dash">—</span>';
   } else {
+    const siTone = eff.estado === 'total' ? ' tone-pos' : eff.estado === 'parte' ? ' tone-warn' : '';
     descCell = '<div class="seg desc-seg'+(noTarifa?' locked':'')+'">'
-      + '<button class="seg-btn '+(eff.descuento?'on-si':'')+'"'+dis+' data-act="descuento" data-val="si" data-dni="'+esc(dni)+'">Sí</button>'
+      + '<button class="seg-btn '+(eff.descuento?'on-si'+siTone:'')+'"'+dis+' data-act="descuento" data-val="si" data-dni="'+esc(dni)+'">Sí</button>'
       + '<button class="seg-btn '+(!eff.descuento?'on-no':'')+'"'+dis+' data-act="descuento" data-val="no" data-dni="'+esc(dni)+'">No</button></div>';
     segCell = '<div class="seg'+(noTarifa?' locked':'')+'">'
       + '<button class="seg-btn '+(eff.estado==='total'?'on-total':'')+'"'+dis+' data-act="estado" data-val="total" data-dni="'+esc(dni)+'">Total</button>'
@@ -769,7 +794,7 @@ function filaHtml(i, num){
   }
   let pagoCell;
   if(eff.estado === 'total') pagoCell = '<div class="money-cell"><span class="pfx">$</span><input class="pago-in" value="'+(eff.precioFinal?fmtNum(eff.precioFinal):'')+'" disabled></div>';
-  else if(eff.estado === 'servicio') pagoCell = '<div class="money-cell"><span class="pfx">$</span><input class="pago-in" value="0" disabled></div>';
+  else if(eff.estado === 'servicio') pagoCell = '<div class="money-cell"><span class="pfx">$</span><input class="pago-in" inputmode="numeric" data-act="monto" data-dni="'+esc(dni)+'" value="'+(eff.montoPagado?fmtNum(eff.montoPagado):'')+'" placeholder="0"></div>';
   else if(eff.estado === 'parte') pagoCell = '<div class="money-cell"><span class="pfx">$</span><input class="pago-in" inputmode="numeric" data-act="monto" data-dni="'+esc(dni)+'" value="'+(eff.montoPagado?fmtNum(eff.montoPagado):'')+'" placeholder="0"></div>';
   else pagoCell = '<span class="muted-dash">—</span>';
   let restCell;
@@ -784,7 +809,8 @@ function filaHtml(i, num){
     const fecha = (i.saved && i.saved.fecha) ? '<div class="reg-fecha">'+fmtFechaHora(i.saved.fecha)+'</div>' : '';
     regCell = chip + fecha;
   }
-  return '<tr class="st-'+st+'" data-dni="'+esc(dni)+'">'
+  const rowSt = rowStatusOf(eff);
+  return '<tr class="st-'+rowSt+'" data-dni="'+esc(dni)+'">'
     + '<td class="cell-num col-num">'+num+'</td>'
     + '<td class="cell-ins">'+insCell+'</td>'
     + '<td class="cell-pv">'+primeraVezChip(i.primeraVez)+'</td>'
@@ -822,6 +848,7 @@ function renderCards(){
 }
 function itemHtml(i){
   const st = statusOf(i);
+  const eff = effectiveState(i);
   const open = i.dni === openDni;
   const dni = esc(i.dni);
   const sub = [];
@@ -831,7 +858,8 @@ function itemHtml(i){
   const head = '<div class="head" data-act="toggle" data-dni="'+dni+'">'
     + '<div class="g"><div class="n">'+esc(i.nombre)+' '+esc(i.apellido)+'</div><div class="s">'+sub.join('  ·  ')+'</div></div>'
     + (open ? '<span class="cev">▲</span>' : chip) + '</div>';
-  return '<div class="item st-'+st+(open?' open':'')+'" id="card-'+dni+'">' + head + (open ? bodyHtml(i) : '') + '</div>';
+  const rowSt = rowStatusOf(eff);
+  return '<div class="item st-'+rowSt+(open?' open':'')+'" id="card-'+dni+'">' + head + (open ? bodyHtml(i) : '') + '</div>';
 }
 function bodyHtml(i){
   const eff = effectiveState(i);
@@ -846,15 +874,16 @@ function bodyHtml(i){
       '<div class="tgroup early"><div class="gtag e">● Hasta el 10 de julio</div><div class="grp">'+TARIFAS.filter(t=>t.grupo==='early').map(optBtn).join('')+'</div></div>'
     + '<div class="tgroup late"><div class="gtag l">● Desde el 11 de julio</div><div class="grp">'+TARIFAS.filter(t=>t.grupo==='late').map(optBtn).join('')+'</div></div>'
     + '<div class="tgroup serv"><div class="gtag s">● Servicio (no paga)</div><div class="grp">'+TARIFAS.filter(t=>t.grupo==='serv').map(optBtn).join('')+'</div></div>';
+  const siToneM = eff.estado === 'total' ? ' tone-pos' : eff.estado === 'parte' ? ' tone-warn' : '';
   const descBlock = esServ ? '' : '<span class="lbl">Descuento pollos 🐤</span><div class="seg">'
-    + '<button class="sbtn '+(eff.descuento?'on-si':'')+'"'+dis+' data-act="descuento" data-val="si" data-dni="'+dni+'">Sí</button>'
+    + '<button class="sbtn '+(eff.descuento?'on-si'+siToneM:'')+'"'+dis+' data-act="descuento" data-val="si" data-dni="'+dni+'">Sí</button>'
     + '<button class="sbtn '+(!eff.descuento?'on-no':'')+'"'+dis+' data-act="descuento" data-val="no" data-dni="'+dni+'">No</button></div>';
   const estadoBlock = esServ ? '' : '<span class="lbl">¿Cómo pagó?</span><div class="seg">'
     + '<button class="sbtn '+(eff.estado==='total'?'on-total':'')+'"'+dis+' data-act="estado" data-val="total" data-dni="'+dni+'">Total</button>'
     + '<button class="sbtn '+(eff.estado==='parte'?'on-parte':'')+'"'+dis+' data-act="estado" data-val="parte" data-dni="'+dni+'">Parcial</button></div>';
   let montoBlock = '';
   if(eff.estado === 'total') montoBlock = '<span class="lbl">Pagó</span><div class="money-cell"><span class="pfx">$</span><input value="'+(eff.precioFinal?fmtNum(eff.precioFinal):'')+'" disabled></div>';
-  else if(eff.estado === 'servicio') montoBlock = '<span class="lbl">Pagó</span><div class="money-cell"><span class="pfx">$</span><input value="0" disabled></div>';
+  else if(eff.estado === 'servicio') montoBlock = '<span class="lbl">¿Cuánto pagó?</span><div class="money-cell"><span class="pfx">$</span><input inputmode="numeric" pattern="[0-9]*" data-act="monto" data-dni="'+dni+'" value="'+(eff.montoPagado?fmtNum(eff.montoPagado):'')+'" placeholder="0"></div>';
   else if(eff.estado === 'parte') montoBlock = '<span class="lbl">¿Cuánto pagó?</span><div class="money-cell"><span class="pfx">$</span><input inputmode="numeric" pattern="[0-9]*" data-act="monto" data-dni="'+dni+'" value="'+(eff.montoPagado?fmtNum(eff.montoPagado):'')+'" placeholder="0"></div>';
   else if(noTarifa) montoBlock = '<div class="hint">Elegí primero la opción de pago para continuar.</div>';
   let restCls='', restTxt='—';
@@ -920,7 +949,7 @@ function guardar(dni){
   if(!isValid(eff)) return;
   let tipo, entregado, saldo, precio;
   if(eff.estado === 'servicio'){
-    tipo = 'servicio'; entregado = 0; saldo = 0; precio = 0;   // viene a servir → no se le cobra el campamento
+    tipo = 'servicio'; entregado = eff.montoPagado || 0; saldo = 0; precio = 0;   // no se le cobra; puede aportar algo igual
   } else {
     entregado = eff.estado === 'total' ? eff.precioFinal : eff.montoPagado;
     saldo = Math.max(eff.precioFinal - entregado, 0);
