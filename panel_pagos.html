@@ -47,6 +47,8 @@
     --neg: #D14D3A;
     --neg-bg: #FBE9E6;
     --grey: #9A8674;
+    --serv: #6C7BB5;
+    --serv-bg: #ECEEF8;
     --ff-num: 'Poppins', sans-serif;
   }
 
@@ -99,11 +101,13 @@
   .stat-card.acc-warn{ border-left-color: var(--warn); }
   .stat-card.acc-neg { border-left-color: var(--neg); }
   .stat-card.acc-grey{ border-left-color: var(--grey); }
+  .stat-card.acc-serv{ border-left-color: var(--serv); }
   .stat-card .lbl { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 800; color: var(--muted); margin-bottom: 6px; }
   .stat-card .big { font-family: var(--ff-num); font-weight: 700; font-size: 1.5rem; line-height: 1.05; }
   .stat-card .big.pos { color: var(--pos); }
   .stat-card .big.neg { color: var(--neg); }
   .stat-card .big.warn { color: var(--warn); }
+  .stat-card .big.serv { color: var(--serv); }
   .stat-card .alt { font-size: 0.78rem; color: var(--muted); font-weight: 600; margin-top: 3px; }
 
   /* ===== Toolbar ===== */
@@ -189,9 +193,10 @@
   .seg-btn:hover { background: var(--accent-bg); }
   .seg-btn.on-total  { background: var(--pos); color: #fff; }
   .seg-btn.on-parte  { background: var(--warn); color: #fff; }
+  .seg-btn.on-serv   { background: var(--serv); color: #fff; }
   .seg-btn:disabled { color: #CDBBA6; background: #FAF6F0; cursor: not-allowed; }
   .seg-btn:disabled:hover { background: #FAF6F0; }
-  .seg.locked { opacity: 0.75; }
+  .seg.locked .seg-btn:disabled { opacity: 1; }
   .seg-btn.on-si { background: var(--pos); color: #fff; }
   .seg-btn.on-no { background: #EBE4DC; color: var(--muted); }
 
@@ -222,6 +227,7 @@
   .btn-save.ok { background: var(--pos); box-shadow: none; }
   .chip { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; padding: 3px 9px; border-radius: 100px; white-space: nowrap; display: inline-block; }
   .chip.c-total   { background: var(--pos-bg); color: var(--pos); }
+  .chip.c-serv    { background: var(--serv-bg); color: var(--serv); }
   .chip.c-parcial { background: var(--warn-bg); color: var(--warn); }
   .chip.c-sin     { background: #F0ECE7; color: var(--grey); }
   .reg-fecha { font-size: 0.68rem; color: var(--muted); font-weight: 700; margin-top: 3px; }
@@ -292,6 +298,7 @@
   #vistaCards .chip.sin { background: #F0E7DC; color: var(--muted); }
   #vistaCards .chip.parcial { background: var(--warn-bg); color: var(--warn); }
   #vistaCards .chip.total { background: var(--pos-bg); color: var(--pos); }
+  #vistaCards .chip.serv { background: var(--serv-bg); color: var(--serv); }
   #vistaCards .body { padding: 4px 14px 16px; border-top: 1px dashed var(--border); }
   #vistaCards .lbl { display: block; font-size: .66rem; font-weight: 900; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin: 14px 2px 7px; }
   #vistaCards .lbl.first { margin-top: 10px; }
@@ -313,6 +320,7 @@
   #vistaCards .sbtn[disabled] { opacity: .4; }
   #vistaCards .sbtn.on-total { background: var(--pos); border-color: var(--pos); color: #fff; }
   #vistaCards .sbtn.on-parte { background: var(--warn); border-color: var(--warn); color: #fff; }
+  #vistaCards .sbtn.on-serv { background: var(--serv); border-color: var(--serv); color: #fff; }
   #vistaCards .sbtn.on-si { background: var(--pos); border-color: var(--pos); color: #fff; }
   #vistaCards .sbtn.on-no { background: #F4EBE0; border-color: var(--border); color: var(--muted); }
   #vistaCards .hint { font-size: .74rem; color: var(--muted); font-weight: 700; padding: 4px 2px; }
@@ -515,26 +523,29 @@ function effectiveState(ins){
   const descuento = (d.descuento !== undefined) ? d.descuento : (s ? !!s.descuento : false);
   let estado;
   if(d.estado !== undefined) estado = d.estado;
+  else if(s && s.tipo === 'servicio') estado = 'servicio';
   else if(s && s.tipo === 'total') estado = 'total';
   else if(s && s.tipo === 'parcial') estado = 'parte';
   else estado = null;
   const t = tarifa ? TARIFA_BY_LABEL[tarifa] : null;
   const precioBase = t ? t.monto : (s ? s.precio : 0);
-  const precioFinal = Math.max(precioBase - (descuento ? DESCUENTO_POLLOS : 0), 0);
+  let precioFinal = Math.max(precioBase - (descuento ? DESCUENTO_POLLOS : 0), 0);
   let montoPagado;
-  if(estado === 'total') montoPagado = precioFinal;
+  if(estado === 'servicio'){ precioFinal = 0; montoPagado = 0; }
+  else if(estado === 'total') montoPagado = precioFinal;
   else if(d.montoPagado !== undefined) montoPagado = d.montoPagado;
   else montoPagado = s ? s.entregado : 0;
   if(montoPagado > precioFinal && precioFinal) montoPagado = precioFinal;
   let restante = null;
-  if(tarifa){
+  if(estado === 'servicio') restante = 0;
+  else if(tarifa){
     if(estado === 'total')      restante = 0;
     else if(estado === 'parte') restante = Math.max(precioFinal - montoPagado, 0);
     else                        restante = precioFinal;
   }
   return { tarifa, descuento, estado, precioBase, precioFinal, montoPagado, restante };
 }
-function isValid(eff){ return !!eff.tarifa && !!eff.estado && (eff.estado === 'total' || eff.montoPagado > 0); }
+function isValid(eff){ return eff.estado === 'servicio' || (!!eff.tarifa && !!eff.estado && (eff.estado === 'total' || eff.montoPagado > 0)); }
 function setDraft(dni, patch){ DRAFTS[dni] = Object.assign({}, DRAFTS[dni] || {}, patch); }
 function editando(){
   if(Object.keys(DRAFTS).length > 0) return true;
@@ -622,14 +633,14 @@ function filtrar(){
   });
 }
 function metricas(){
-  let nTotal=0, nParcial=0, nSin=0, recaudado=0, pendiente=0;
+  let nTotal=0, nParcial=0, nSin=0, nServicio=0, recaudado=0, pendiente=0;
   INSCRIPTOS.forEach(i => {
     const st = statusOf(i);
-    if(st === 'total'){ nTotal++; recaudado += (i.saved.entregado || i.saved.precio); }
+    if(st === 'total'){ nTotal++; recaudado += (i.saved.entregado || i.saved.precio); if(i.saved.tipo === 'servicio') nServicio++; }
     else if(st === 'parcial'){ nParcial++; recaudado += i.saved.entregado; pendiente += i.saved.saldo; }
     else nSin++;
   });
-  return { total: INSCRIPTOS.length, nTotal, nParcial, nSin, recaudado, pendiente };
+  return { total: INSCRIPTOS.length, nTotal, nParcial, nSin, nServicio, recaudado, pendiente };
 }
 
 /* ════════════════════════════════════════════════════════════════════════
@@ -649,6 +660,7 @@ function renderStats(m){
   document.getElementById('stats').innerHTML =
     statCard('acc-a',   'Inscriptos',    m.total,               '',     'personas anotadas') +
     statCard('acc-pos', 'Pago completo', m.nTotal,              'pos',  m.total ? Math.round(m.nTotal/m.total*100)+'% del total' : '') +
+    statCard('acc-serv','Servicio',      m.nServicio,           'serv', 'vienen a servir') +
     statCard('acc-warn','Pago parcial',  m.nParcial,            'warn', 'con saldo pendiente') +
     statCard('acc-grey','Sin registrar', m.nSin,                '',     'falta cargar el pago') +
     statCard('acc-pos', 'Recaudado',     fmtPesos(m.recaudado), 'pos',  'dinero recibido') +
@@ -672,7 +684,7 @@ function ordenar(lista){
       case 'primera':   return _norm(ins.primeraVez || '');
       case 'tarifa':    return _norm(eff.tarifa || '');
       case 'descuento': return eff.descuento ? 1 : 0;
-      case 'estado':    return eff.estado === 'total' ? 2 : eff.estado === 'parte' ? 1 : 0;
+      case 'estado':    return (eff.estado === 'total' || eff.estado === 'servicio') ? 2 : eff.estado === 'parte' ? 1 : 0;
       case 'pago':      return eff.estado ? (eff.estado === 'total' ? eff.precioFinal : eff.montoPagado) : -1;
       case 'restante':  return eff.restante == null ? -1 : eff.restante;
       case 'registro':  { const s = statusOf(ins); return s === 'total' ? 2 : s === 'parcial' ? 1 : 0; }
@@ -718,9 +730,11 @@ function filaHtml(i, num){
     + '<button class="seg-btn '+(!eff.descuento?'on-no':'')+'"'+dis+' data-act="descuento" data-val="no" data-dni="'+esc(dni)+'">No</button></div>';
   const segCell = '<div class="seg'+(noTarifa?' locked':'')+'">'
     + '<button class="seg-btn '+(eff.estado==='total'?'on-total':'')+'"'+dis+' data-act="estado" data-val="total" data-dni="'+esc(dni)+'">Total</button>'
-    + '<button class="seg-btn '+(eff.estado==='parte'?'on-parte':'')+'"'+dis+' data-act="estado" data-val="parte" data-dni="'+esc(dni)+'">Parcial</button></div>';
+    + '<button class="seg-btn '+(eff.estado==='parte'?'on-parte':'')+'"'+dis+' data-act="estado" data-val="parte" data-dni="'+esc(dni)+'">Parcial</button>'
+    + '<button class="seg-btn '+(eff.estado==='servicio'?'on-serv':'')+'" data-act="estado" data-val="servicio" data-dni="'+esc(dni)+'">Servicio</button></div>';
   let pagoCell;
   if(eff.estado === 'total') pagoCell = '<div class="money-cell"><span class="pfx">$</span><input class="pago-in" value="'+(eff.precioFinal?fmtNum(eff.precioFinal):'')+'" disabled></div>';
+  else if(eff.estado === 'servicio') pagoCell = '<div class="money-cell"><span class="pfx">$</span><input class="pago-in" value="0" disabled></div>';
   else if(eff.estado === 'parte') pagoCell = '<div class="money-cell"><span class="pfx">$</span><input class="pago-in" inputmode="numeric" data-act="monto" data-dni="'+esc(dni)+'" value="'+(eff.montoPagado?fmtNum(eff.montoPagado):'')+'" placeholder="0"></div>';
   else pagoCell = '<span class="muted-dash">—</span>';
   let restCell;
@@ -731,7 +745,7 @@ function filaHtml(i, num){
   if(dirty){
     regCell = '<button class="btn-save" data-act="save" data-dni="'+esc(dni)+'"'+(isValid(eff)?'':' disabled')+'>Guardar</button>';
   } else {
-    const chip = st==='total' ? '<span class="chip c-total">✓ Pagó todo</span>' : st==='parcial' ? '<span class="chip c-parcial">◐ Parcial</span>' : '<span class="chip c-sin">Sin registrar</span>';
+    const chip = st==='total' ? ((i.saved && i.saved.tipo==='servicio') ? '<span class="chip c-serv">⛑ Servicio</span>' : '<span class="chip c-total">✓ Pagó todo</span>') : st==='parcial' ? '<span class="chip c-parcial">◐ Parcial</span>' : '<span class="chip c-sin">Sin registrar</span>';
     const fecha = (i.saved && i.saved.fecha) ? '<div class="reg-fecha">'+fmtFechaHora(i.saved.fecha)+'</div>' : '';
     regCell = chip + fecha;
   }
@@ -778,7 +792,7 @@ function itemHtml(i){
   const sub = [];
   const ed = edadTxt(i.edad); if(ed) sub.push(ed);
   if(i.iglesia) sub.push('⛪ ' + esc(i.iglesia));
-  const chip = st==='total' ? '<span class="chip total">✓ Pagó todo</span>' : st==='parcial' ? '<span class="chip parcial">◐ Parcial</span>' : '<span class="chip sin">Sin registrar</span>';
+  const chip = st==='total' ? ((i.saved && i.saved.tipo==='servicio') ? '<span class="chip serv">⛑ Servicio</span>' : '<span class="chip total">✓ Pagó todo</span>') : st==='parcial' ? '<span class="chip parcial">◐ Parcial</span>' : '<span class="chip sin">Sin registrar</span>';
   const head = '<div class="head" data-act="toggle" data-dni="'+dni+'">'
     + '<div class="g"><div class="n">'+esc(i.nombre)+' '+esc(i.apellido)+'</div><div class="s">'+sub.join('  ·  ')+'</div></div>'
     + (open ? '<span class="cev">▲</span>' : chip) + '</div>';
@@ -800,9 +814,11 @@ function bodyHtml(i){
     + '<button class="sbtn '+(!eff.descuento?'on-no':'')+'"'+dis+' data-act="descuento" data-val="no" data-dni="'+dni+'">No</button></div>';
   const estadoBlock = '<span class="lbl">¿Cómo pagó?</span><div class="seg">'
     + '<button class="sbtn '+(eff.estado==='total'?'on-total':'')+'"'+dis+' data-act="estado" data-val="total" data-dni="'+dni+'">Total</button>'
-    + '<button class="sbtn '+(eff.estado==='parte'?'on-parte':'')+'"'+dis+' data-act="estado" data-val="parte" data-dni="'+dni+'">Parcial</button></div>';
+    + '<button class="sbtn '+(eff.estado==='parte'?'on-parte':'')+'"'+dis+' data-act="estado" data-val="parte" data-dni="'+dni+'">Parcial</button>'
+    + '<button class="sbtn '+(eff.estado==='servicio'?'on-serv':'')+'" data-act="estado" data-val="servicio" data-dni="'+dni+'">Servicio</button></div>';
   let montoBlock = '';
   if(eff.estado === 'total') montoBlock = '<span class="lbl">Pagó</span><div class="money-cell"><span class="pfx">$</span><input value="'+(eff.precioFinal?fmtNum(eff.precioFinal):'')+'" disabled></div>';
+  else if(eff.estado === 'servicio') montoBlock = '<span class="lbl">Pagó</span><div class="money-cell"><span class="pfx">$</span><input value="0" disabled></div>';
   else if(eff.estado === 'parte') montoBlock = '<span class="lbl">¿Cuánto pagó?</span><div class="money-cell"><span class="pfx">$</span><input inputmode="numeric" pattern="[0-9]*" data-act="monto" data-dni="'+dni+'" value="'+(eff.montoPagado?fmtNum(eff.montoPagado):'')+'" placeholder="0"></div>';
   else if(noTarifa) montoBlock = '<div class="hint">Elegí primero la opción de pago para continuar.</div>';
   let restCls='', restTxt='—';
@@ -814,7 +830,7 @@ function bodyHtml(i){
     accion = '<button class="btn-save" data-act="save" data-dni="'+dni+'"'+(isValid(eff)?'':' disabled')+'>Guardar</button>';
   } else if(st !== 'sin'){
     const f = (i.saved && i.saved.fecha) ? '<div class="reg-fecha">Registrado '+fmtFechaHora(i.saved.fecha)+'</div>' : '';
-    accion = '<div>'+(st==='total'?'<span class="chip total">✓ Pagó todo</span>':'<span class="chip parcial">◐ Parcial</span>')+f+'</div>';
+    accion = '<div>'+(st==='total'?((i.saved && i.saved.tipo==='servicio')?'<span class="chip serv">⛑ Servicio</span>':'<span class="chip total">✓ Pagó todo</span>'):'<span class="chip parcial">◐ Parcial</span>')+f+'</div>';
   } else {
     accion = '<button class="btn-save" data-act="save" data-dni="'+dni+'" disabled>Guardar</button>';
   }
@@ -866,22 +882,28 @@ function guardar(dni){
   if(!ins) return;
   const eff = effectiveState(ins);
   if(!isValid(eff)) return;
-  const entregado = eff.estado === 'total' ? eff.precioFinal : eff.montoPagado;
-  const saldo = Math.max(eff.precioFinal - entregado, 0);
-  const tipo = (eff.estado === 'total' || saldo <= 0) ? 'total' : 'parcial';   // si cubre todo => total
+  let tipo, entregado, saldo, precio;
+  if(eff.estado === 'servicio'){
+    tipo = 'servicio'; entregado = 0; saldo = 0; precio = 0;   // viene a servir → no se le cobra el campamento
+  } else {
+    entregado = eff.estado === 'total' ? eff.precioFinal : eff.montoPagado;
+    saldo = Math.max(eff.precioFinal - entregado, 0);
+    tipo = (eff.estado === 'total' || saldo <= 0) ? 'total' : 'parcial';   // si cubre todo => total
+    precio = eff.precioBase;
+  }
 
   const btn = document.querySelector('.btn-save[data-act="save"][data-dni="'+cssEsc(dni)+'"]');
   if(btn){ btn.disabled = true; btn.textContent = 'Guardando…'; }
 
   const payload = {
     action: 'pago', dni: ins.dni, nombre: ins.nombre, apellido: ins.apellido, iglesia: ins.iglesia,
-    tarifa: eff.tarifa, precio: eff.precioBase, descuento: eff.descuento ? 'Sí' : 'No',
+    tarifa: eff.tarifa, precio: precio, descuento: eff.descuento ? 'Sí' : 'No',
     tipo: tipo, entregado: entregado, saldo: saldo
   };
   fetch(APPS_SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
     .catch(err => console.warn('No se pudo guardar en Sheets:', err));
 
-  ins.saved = { tarifa: eff.tarifa, precio: eff.precioBase, descuento: eff.descuento, tipo: tipo, entregado: entregado, saldo: saldo, fecha: new Date().toISOString() };
+  ins.saved = { tarifa: eff.tarifa, precio: precio, descuento: eff.descuento, tipo: tipo, entregado: entregado, saldo: saldo, fecha: new Date().toISOString() };
   delete DRAFTS[dni];
   if(btn){ btn.textContent = '✓ Guardado'; btn.classList.add('ok'); }
   setTimeout(() => { if(esMobile()) openDni = null; render(); setTimeout(cargarSilencioso, 800); }, 700);
@@ -967,7 +989,7 @@ document.getElementById('tbody').addEventListener('click', e => {
   if(act === 'estado'){
     if(btn.disabled) return;
     const eff = effectiveState(BY_DNI[dni]);
-    if(!eff.tarifa) return;
+    if(btn.dataset.val !== 'servicio' && !eff.tarifa) return;
     const patch = { estado: btn.dataset.val };
     if(btn.dataset.val === 'total') patch.montoPagado = eff.precioFinal;
     setDraft(dni, patch); render();
@@ -1013,7 +1035,7 @@ document.getElementById('vistaCards').addEventListener('click', e => {
     if(!eff.tarifa) return;
     setDraft(dni, { descuento: el.dataset.val === 'si' }); refreshCard(dni);
   } else if(act === 'estado'){
-    if(!eff.tarifa) return;
+    if(el.dataset.val !== 'servicio' && !eff.tarifa) return;
     const patch = { estado: el.dataset.val };
     if(el.dataset.val === 'total') patch.montoPagado = eff.precioFinal;
     setDraft(dni, patch); refreshCard(dni);
