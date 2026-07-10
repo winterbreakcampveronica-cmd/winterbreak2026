@@ -312,6 +312,13 @@
   #vistaCards .item.st-parcial .head { border-left-color: var(--warn); }
   #vistaCards .item.st-servicio .head { border-left-color: var(--serv); }
   #vistaCards .item.st-sin .head { border-left-color: var(--grey); }
+  /* Borde del box y textos del encabezado según el estado (celu) */
+  #vistaCards .item.st-total:not(.open)    { border-color: var(--pos); }
+  #vistaCards .item.st-parcial:not(.open)  { border-color: var(--warn); }
+  #vistaCards .item.st-servicio:not(.open) { border-color: var(--serv); }
+  #vistaCards .item.st-total    .n, #vistaCards .item.st-total    .s { color: var(--pos)  !important; }
+  #vistaCards .item.st-parcial  .n, #vistaCards .item.st-parcial  .s { color: var(--warn) !important; }
+  #vistaCards .item.st-servicio .n, #vistaCards .item.st-servicio .s { color: var(--serv) !important; }
   #vistaCards .head .g { flex: 1; min-width: 0; }
   #vistaCards .head .n { font-weight: 800; font-size: .98rem; line-height: 1.2; }
   #vistaCards .head .s { font-size: .74rem; color: var(--muted); font-weight: 700; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
