@@ -559,7 +559,7 @@ tbody td {
 <body>
 
 <!-- ═══ CANDADO DE ACCESO (clave del equipo) ═══ -->
-<div id="lockScreen" style="position:fixed;inset:0;z-index:99999;background:#FFF8F0;display:flex;align-items:center;justify-content:center;padding:1.2rem">
+<div id="lockScreen" style="display:none">
   <div style="width:100%;max-width:380px;background:#fff;border:1.5px solid #F5D9BC;border-radius:22px;box-shadow:0 12px 40px rgba(244,131,58,0.18);padding:2rem 1.6rem;text-align:center">
     <div style="font-size:2.4rem;line-height:1">🔒</div>
     <h2 style="font-family:'Playfair Display',serif;font-size:1.5rem;color:#3D2010;margin:0.6rem 0 0.2rem">Panel privado</h2>
@@ -1409,12 +1409,10 @@ function tryUnlock(){
     inp.select();
   }
 }
-// Si ya se validó en esta sesión (misma pestaña), no vuelve a pedir la clave
+// Arranque directo, sin clave
 (function(){
-  let ok = false;
-  try{ ok = sessionStorage.getItem('wb_dash_ok') === '1'; }catch(e){}
-  if(ok){ const l = document.getElementById('lockScreen'); if(l) l.style.display='none'; boot(); }
-  else { const i = document.getElementById('lockPass'); if(i) i.focus(); }
+  const l = document.getElementById('lockScreen'); if(l) l.style.display='none';
+  boot();
 })();
 </script>
 </body>
